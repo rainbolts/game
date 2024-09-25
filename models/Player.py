@@ -1,20 +1,23 @@
 import math
 
-import pygame
 from pygame.key import ScancodeWrapper
 
 from models import Settings
 from models.Entity import Entity
 from models.Settings import Controls
+from models.skills.Skill import Skill
 
 
 class Player(Entity):
-    def __init__(self, spawn_x: int, spawn_y: int, settings: Settings):
-        super().__init__(spawn_x, spawn_y, 40, 40, (0, 255, 0))
+    def __init__(self, spawn: tuple[int, int], settings: Settings):
+        super().__init__(spawn, 40, 40, (0, 255, 0))
         self.settings = settings
         self.maximum_speed = 4
         self.last_time_did_move = False
         self.last_time_keys_pressed = [False, False, False, False]
+
+    def get_collision_behaviors(self):
+        return []
 
     def get_preferred_velocity(self, keys: ScancodeWrapper):
         self._preferred_velocity.from_polar((0, 0))
@@ -49,3 +52,9 @@ class Player(Entity):
         direction = math.atan2(up_pressed - down_pressed, right_pressed - left_pressed)
         self._preferred_velocity.from_polar((self.maximum_speed, direction / math.pi * 180))
         return self._preferred_velocity
+
+    def get_preferred_skills(self, keys: ScancodeWrapper, mouse_position: tuple[int, int]) -> list[Skill]:
+        if self.settings.hotkey_pressed(keys, Controls.SKILL1):
+            return [Skill(self.rect.center, mouse_position)]
+        else:
+            return []

@@ -1,22 +1,29 @@
 from pygame import Vector2
+from pygame.sprite import Group
 
+from models.Behaviors import CollisionBehavior
 from models.Entity import Entity
 
 
 class Projectile(Entity):
-    def __init__(self, spawn_x: int, spawn_y: int):
-        super().__init__(spawn_x, spawn_y, 10, 10, (0, 255, 255))
+    projectile_group = Group()
+
+    def __init__(self, spawn: tuple[int, int], time_to_live: int):
+        super().__init__(spawn, 10, 10, (0, 255, 255), time_to_live)
+
         self.damage = 1
-        self.time_to_live = 60
+        self.projectile_group.add(self)
 
         self._preferred_velocity = Vector2()
 
-    def age(self) -> bool:
-        self.time_to_live -= 1
-        return self.time_to_live <= 0
+    def get_collision_behaviors(self) -> list[CollisionBehavior]:
+        return [CollisionBehavior.STICKY, CollisionBehavior.DAMAGE]
 
     def get_preferred_velocity(self, _):
         return self._preferred_velocity
 
     def set_preferred_velocity(self, velocity: Vector2):
         self._preferred_velocity = velocity
+
+    def get_preferred_skills(self, *_):
+        return []

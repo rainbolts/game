@@ -4,11 +4,14 @@ from enum import IntEnum
 import pygame
 
 from models.Enemy import Enemy
-from models.Floor import Floor
+from models.Entity import Entity
+from models.Area import Area
 from models.Player import Player
-from models.Projectile import Projectile
 from models.Settings import Settings
-from systems.MovementSystem import PlayerCentricMovementSystem, FloorCentricMovementSystem
+from systems.AreaSystem import AreaSystem
+from systems.DamageSystem import DamageSystem
+from systems.MovementSystem import PlayerCentricMovementSystem, AreaCentricMovementSystem
+from systems.SkillSystem import SkillSystem
 
 
 class Event(IntEnum):
@@ -19,33 +22,22 @@ class Game:
     def __init__(self):
         pygame.init()
 
-        self.settings = Settings()
-
         if self.debug_enabled():
             window_flags = pygame.SCALED
         else:
             window_flags = pygame.FULLSCREEN | pygame.SCALED
+
+        self.settings = Settings()
         self.window = pygame.display.set_mode((self.settings.game_width, self.settings.game_height), window_flags)
         self.clock = pygame.time.Clock()
 
-        self.floor = Floor(offset=(20, 20), width=self.settings.game_width - 40, height=self.settings.game_height - 40)
+        self.area_system = AreaSystem()
+        self.movement_system = PlayerCentricMovementSystem(self.settings)
+        self.skill_system = SkillSystem()
+        self.damage_system = DamageSystem()
 
-        player = Player(spawn_x=self.settings.game_width // 2, spawn_y=self.settings.game_height // 2, settings=self.settings)
-        self.player_group = pygame.sprite.Group()
-        self.player_group.add(player)
-
-        enemy = Enemy(spawn_x=60, spawn_y=60)
-        self.enemy_group = pygame.sprite.Group()
-        self.enemy_group.add(enemy)
-
-        projectile = Projectile(spawn_x=100, spawn_y=100)
-        projectile.get_preferred_velocity(None).from_polar((5, -45))
-        self.projectile_group = pygame.sprite.Group()
-        self.projectile_group.add(projectile)
-
-        self.movement_system = PlayerCentricMovementSystem(self.settings, self.floor, player)
-        self.movement_system.add_entity(enemy)
-        self.movement_system.add_entity(projectile)
+        self.player = Player((self.settings.game_width // 2, self.settings.game_height // 2), self.settings)
+        Enemy((60, 60), 1000)
 
     def run(self):
         should_run = True
@@ -63,13 +55,15 @@ class Game:
                     self.update_fps()
 
             keys = pygame.key.get_pressed()
+            mouse_position = pygame.mouse.get_pos()
 
-            self.movement_system.move(keys)
+            self.area_system.generate_area()
+            self.movement_system.move(keys, self.area_system.current_area)
+            self.skill_system.use_skills(keys, mouse_position)
+            self.damage_system.apply_damage()
 
-            self.window.blit(self.floor, self.floor.offset)
-            self.enemy_group.draw(self.window)
-            self.player_group.draw(self.window)
-            self.projectile_group.draw(self.window)
+            self.window.blit(self.area_system.current_area, self.area_system.current_area.offset)
+            Entity.entity_group.draw(self.window)
             self.update_fps()
 
             pygame.display.update()

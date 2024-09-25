@@ -1,0 +1,30 @@
+Multiply X
+Fork multiply X
+Pierce (no angle)
+Chain (dynamic angle)
+Wall bounce
+Return to player
+Return to origin
+
+-- Change the spread --
+Parallel
+Cone
+Circle (variation of cone)
+Random
+
+-- Change the length --
+Short
+Long
+
+-- Change the trajectory --
+Zig zag
+Random
+Homing
+Spiral
+Circle
+
+-- Change the initial vector --
+Default (player -> cursor)
+Artillery (cursor -> cursor)
+Player (player -> player, run over people)
+
