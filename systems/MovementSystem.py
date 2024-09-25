@@ -27,7 +27,7 @@ class MovementSystem(ABC):
 
         area_mask = area.mask
         move_x, did_collide_x = self._get_move_x(entity, preferred_velocity, area, area_mask)
-        move_y, did_collide_y = self._get_move_y(entity, preferred_velocity, area, area_mask)
+        move_y, did_collide_y = self._get_move_y(entity, move_x, preferred_velocity, area, area_mask)
 
         if CollisionBehavior.STICKY in collision_behaviors and (did_collide_x or did_collide_y):
             preferred_velocity.from_polar((0, 0))
@@ -42,46 +42,30 @@ class MovementSystem(ABC):
         if CollisionBehavior.BOUNCE in collision_behaviors and did_collide_y:
             preferred_velocity.y *= -1
 
-        actual_velocity = Vector2(move_x, move_y)
-        return actual_velocity.x, actual_velocity.y
+        return move_x, move_y
 
     @staticmethod
     def _get_move_x(entity: Entity, preferred_velocity: Vector2, floor: Area, floor_mask: Mask) -> tuple[float, bool]:
-        did_collide = False
         current_location = entity.get_precise_location()
         move = preferred_velocity.x
         new_pos = int(round(current_location[0] + preferred_velocity.x))
         entity_offset = (new_pos - floor.offset[0]), (current_location[1] - floor.offset[1])
         overlap = floor_mask.overlap(entity.mask, entity_offset)
         if overlap:
-            did_collide = True
-            overlap_mask = floor_mask.overlap_mask(entity.mask, entity_offset)
-            overlap_rect = overlap_mask.get_bounding_rects()[0]
-            overlap = overlap_rect.x
-            overlap_width = overlap_rect.width
-            move = (overlap - current_location[0] + floor.offset[0]
-                    - (entity.width / 2 + entity.width / 2 * math.copysign(1, preferred_velocity.x))
-                    + (overlap_width / 2 - overlap_width / 2 * math.copysign(1, preferred_velocity.x)))
-        return move, did_collide
+            return 0, True
+        return move, False
 
     @staticmethod
-    def _get_move_y(entity: Entity, preferred_velocity: Vector2, floor: Area, floor_mask: Mask) -> tuple[float, bool]:
-        did_collide = False
+    def _get_move_y(entity: Entity, move_x: float, preferred_velocity: Vector2, floor: Area, floor_mask: Mask) -> tuple[float, bool]:
         current_location = entity.get_precise_location()
+        current_location = current_location[0] + move_x, current_location[1]
         move = -preferred_velocity.y
         new_pos = int(round(current_location[1] + move))
         entity_offset = (current_location[0] - floor.offset[0]), (new_pos - floor.offset[1])
         overlap = floor_mask.overlap(entity.mask, entity_offset)
         if overlap:
-            did_collide = True
-            overlap_mask = floor_mask.overlap_mask(entity.mask, entity_offset)
-            overlap_rect = overlap_mask.get_bounding_rects()[0]
-            overlap = overlap_rect.y
-            overlap_height = overlap_rect.height
-            move = (overlap - current_location[1] + floor.offset[1]
-                    - (entity.height / 2 + entity.height / 2 * math.copysign(1, -preferred_velocity.y))
-                    + (overlap_height / 2 - overlap_height / 2 * math.copysign(1, -preferred_velocity.y)))
-        return move, did_collide
+            return 0, True
+        return move, False
 
 
 class AreaCentricMovementSystem(MovementSystem):
