@@ -17,7 +17,7 @@ class Projectile(Entity):
         self._preferred_velocity = Vector2()
 
     def get_collision_behaviors(self) -> list[CollisionBehavior]:
-        return [CollisionBehavior.STICKY, CollisionBehavior.DAMAGE]
+        return [CollisionBehavior.DISAPPEAR, CollisionBehavior.DAMAGE]
 
     def get_preferred_velocity(self, _):
         return self._preferred_velocity

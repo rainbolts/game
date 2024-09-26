@@ -49,7 +49,7 @@ class MovementSystem(ABC):
         current_location = entity.get_precise_location()
         move = preferred_velocity.x
         new_pos = int(round(current_location[0] + preferred_velocity.x))
-        entity_offset = (new_pos - floor.offset[0]), (current_location[1] - floor.offset[1])
+        entity_offset = (new_pos - floor.offset[0]), (int(round(current_location[1])) - floor.offset[1])
         overlap = floor_mask.overlap(entity.mask, entity_offset)
         if overlap:
             return 0, True
@@ -61,7 +61,7 @@ class MovementSystem(ABC):
         current_location = current_location[0] + move_x, current_location[1]
         move = -preferred_velocity.y
         new_pos = int(round(current_location[1] + move))
-        entity_offset = (current_location[0] - floor.offset[0]), (new_pos - floor.offset[1])
+        entity_offset = (int(round(current_location[0])) - floor.offset[0]), (new_pos - floor.offset[1])
         overlap = floor_mask.overlap(entity.mask, entity_offset)
         if overlap:
             return 0, True

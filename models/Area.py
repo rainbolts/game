@@ -9,8 +9,8 @@ class Area(Surface):
         super().__init__((size, size), pygame.SRCALPHA)
         self._offset = offset
 
-        tiles = self._generate(40)
-        self.draw(tiles, size)
+        self.tiles = self._generate(40)
+        self.draw(size)
 
         self._mask = pygame.mask.from_surface(self)
 
@@ -54,9 +54,9 @@ class Area(Surface):
     def move(self, dx: int, dy: int):
         self._offset = self._offset[0] + dx, self._offset[1] + dy
 
-    def draw(self, tiles, size):
-        scale = size // len(tiles)
-        for i, row in enumerate(tiles):
+    def draw(self, size):
+        scale = size // len(self.tiles)
+        for i, row in enumerate(self.tiles):
             for j, tile in enumerate(row):
                 if tile:
                     pygame.draw.rect(self, (255, 255, 255), (i * scale, j * scale, scale, scale))

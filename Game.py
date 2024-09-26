@@ -3,13 +3,12 @@ from enum import IntEnum
 
 import pygame
 
-from models.Enemy import Enemy
 from models.Entity import Entity
-from models.Area import Area
 from models.Player import Player
 from models.Settings import Settings
 from systems.AreaSystem import AreaSystem
 from systems.DamageSystem import DamageSystem
+from systems.EnemySystem import EnemySystem
 from systems.MovementSystem import PlayerCentricMovementSystem, AreaCentricMovementSystem
 from systems.SkillSystem import SkillSystem
 
@@ -31,13 +30,13 @@ class Game:
         self.window = pygame.display.set_mode((self.settings.game_width, self.settings.game_height), window_flags)
         self.clock = pygame.time.Clock()
 
-        self.area_system = AreaSystem()
+        self.enemy_system = EnemySystem()
+        self.area_system = AreaSystem(self.enemy_system)
         self.movement_system = PlayerCentricMovementSystem(self.settings)
         self.skill_system = SkillSystem()
         self.damage_system = DamageSystem()
 
         self.player = Player((self.settings.game_width // 2, self.settings.game_height // 2), self.settings)
-        Enemy((60, 60), 1000)
 
     def run(self):
         should_run = True
