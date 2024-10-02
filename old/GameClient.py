@@ -1,15 +1,17 @@
 import sys
+import threading
 from enum import IntEnum
 
 import pygame
 
 from models.Entity import Entity
-from models.Player import Player
 from models.Settings import Settings
 from systems.AreaSystem import AreaSystem
 from systems.DamageSystem import DamageSystem
 from systems.EnemySystem import EnemySystem
 from systems.MovementSystem import PlayerCentricMovementSystem, AreaCentricMovementSystem
+from systems.NetCode import NetCodeClient
+from systems.PlayerSystem import PlayerSystem
 from systems.SkillSystem import SkillSystem
 
 
@@ -27,16 +29,15 @@ class Game:
             window_flags = pygame.FULLSCREEN | pygame.SCALED
 
         self.settings = Settings()
+        self.client = NetCodeClient(self.settings)
         self.window = pygame.display.set_mode((self.settings.game_width, self.settings.game_height), window_flags)
         self.clock = pygame.time.Clock()
 
         self.enemy_system = EnemySystem()
         self.area_system = AreaSystem(self.enemy_system)
-        self.movement_system = PlayerCentricMovementSystem(self.settings)
+        self.movement_system = PlayerCentricMovementSystem()
         self.skill_system = SkillSystem()
         self.damage_system = DamageSystem()
-
-        self.player = Player((self.settings.game_width // 2, self.settings.game_height // 2), self.settings)
 
     def run(self):
         should_run = True
@@ -50,8 +51,12 @@ class Game:
                 if event.type == pygame.QUIT:
                     should_run = False
 
-                if event.type == Event.FPS:
+                elif event.type == Event.FPS:
                     self.update_fps()
+
+                elif event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_ESCAPE:
+                        should_run = False
 
             keys = pygame.key.get_pressed()
             mouse_position = pygame.mouse.get_pos()

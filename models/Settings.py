@@ -26,7 +26,6 @@ class Settings:
             Controls.SKILL2: pygame.MOUSEBUTTONDOWN
         }
         self.mouse_hotkeys = {
-            Controls.MOVE_LEFT: 1,
             Controls.SKILL1: 1,
             Controls.SKILL2: 3
         }
@@ -40,8 +39,12 @@ class Settings:
 
         return game_width, game_height
 
-    def hotkey_pressed(self, keys, control):
-        if self.hotkeys[control] == pygame.MOUSEBUTTONDOWN:
-            return pygame.mouse.get_pressed()[self.mouse_hotkeys[control] - 1]
-        else:
-            return keys[self.hotkeys[control]]
+    def is_hotkey(self, key, control) -> bool:
+        if control not in self.hotkeys:
+            return False
+        return self.hotkeys[control] == key
+
+    def is_mouse_hotkey(self, control, mouse_key) -> bool:
+        if control not in self.mouse_hotkeys:
+            return False
+        return self.mouse_hotkeys[control] == mouse_key
