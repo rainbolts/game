@@ -3,6 +3,7 @@ import socket
 import threading
 
 from models.Client import Client
+from systems.AreaSystem import AreaSystem
 from systems.ServerBroadcastSystem import ServerBroadcastSystem
 from systems.MovementSystem import MovementSystem
 from systems.ServerReceiverSystem import ServerReceiverSystem
@@ -21,9 +22,10 @@ class GameServer:
         self.running = False
         self.clients: dict[socket, Client] = {}
 
+        self.area_system = AreaSystem()
         self.movement_system = MovementSystem()
-        self.broadcast_system = ServerBroadcastSystem(self.clients)
-        self.receiver_system = ServerReceiverSystem(self.clients, self.movement_system)
+        self.broadcaster = ServerBroadcastSystem(self.clients, self.area_system)
+        self.receiver = ServerReceiverSystem(self.clients, self.movement_system)
 
     def run(self):
         self.running = True
@@ -41,7 +43,7 @@ class GameServer:
 
         try:
             while self.running:
-                self.receiver_system.receive_updates(client, address)
+                self.receiver.receive_updates(client, address)
         except ConnectionResetError as e:
             print(e)
         finally:
@@ -63,8 +65,7 @@ class GameServer:
 
     def game_thread(self) -> None:
         """
-        Runs the game loop until the game is closed. Responsible for ensuring all game systems receive
-        the correct ΔT and user inputs.
+        Runs the game loop until the game is closed.
         """
         pygame.display.set_caption('Server')
         clock = pygame.time.Clock()
@@ -75,8 +76,9 @@ class GameServer:
                 if event.type == pygame.QUIT:
                     self.running = False
 
-            self.movement_system.move()
-            self.broadcast_system.send_updates()
+            self.area_system.generate_area()
+            self.movement_system.move(self.area_system.current_area)
+            self.broadcaster.send_updates()
             clock.tick(60)
 
         pygame.quit()

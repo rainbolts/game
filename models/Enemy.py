@@ -1,7 +1,8 @@
-from pygame.key import ScancodeWrapper
+from pygame import Vector2
 from pygame.sprite import Group
 
 from models.Behaviors import CollisionBehavior
+from models.Direction import Direction
 from models.Entity import Entity
 
 
@@ -17,7 +18,7 @@ class Enemy(Entity):
     def get_collision_behaviors(self) -> list[CollisionBehavior]:
         return []
 
-    def get_preferred_velocity(self, keys: ScancodeWrapper):
+    def get_preferred_velocity(self, direction: Direction) -> Vector2:
         return self._preferred_velocity
 
     def get_preferred_skills(self, *_):

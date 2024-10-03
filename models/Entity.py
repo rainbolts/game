@@ -5,6 +5,7 @@ from pygame.key import ScancodeWrapper
 from pygame.sprite import Sprite, Group
 
 from models.Behaviors import CollisionBehavior
+from models.Direction import Direction
 
 
 class Entity(Sprite, ABC):
@@ -17,8 +18,8 @@ class Entity(Sprite, ABC):
         self.image = Surface((width, height))
         self.image.fill(color)
         self.rect = self.image.get_rect()
-        self.rect.x = spawn[0] - width // 2
-        self.rect.y = spawn[1] - height // 2
+        self.rect.x = spawn[0]
+        self.rect.y = spawn[1]
         self.mask = mask.from_surface(self.image)
         self.time_to_live = time_to_live
         self.entity_group.add(self)
@@ -29,7 +30,7 @@ class Entity(Sprite, ABC):
     def get_collision_behaviors(self) -> list[CollisionBehavior]:
         raise NotImplementedError
 
-    def get_preferred_velocity(self, keys: ScancodeWrapper) -> Vector2:
+    def get_preferred_velocity(self, direction: Direction) -> Vector2:
         raise NotImplementedError
 
     def get_preferred_skills(self, keys: ScancodeWrapper, mouse_position: tuple[int, int]) -> Vector2:
@@ -47,15 +48,20 @@ class Entity(Sprite, ABC):
     def get_precise_location(self) -> tuple[float, float]:
         return self._precise_location
 
-    def move_precisely(self, dx: float, dy: float):
+    def move_absolute(self, x: float, y: float):
+        self._precise_location = x, y
+        self.rect.x = int(round(x))
+        self.rect.y = int(round(y))
+
+    def move_relative(self, dx: float, dy: float):
         rounded_dx = int(round(dx))
         rounded_dy = int(round(dy))
         if rounded_dx == 0 and rounded_dy == 0:
             return
 
-        self._precise_location = self._precise_location[0] + dx, self._precise_location[1] + dy
         self.rect.x = int(round(self._precise_location[0]))
         self.rect.y = int(round(self._precise_location[1]))
+        self._precise_location = self._precise_location[0] + dx, self._precise_location[1] + dy
 
     @property
     def width(self):

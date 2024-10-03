@@ -1,5 +1,3 @@
-import random
-
 from models.Area import Area
 from models.Enemy import Enemy
 
@@ -24,8 +22,8 @@ class EnemySystem:
         # Empty spaces are denoted by False
         x, y = pack_location
         while True:
-            x += random.choice([-1, 0, 1])
-            y += random.choice([-1, 0, 1])
+            x += area.random.choice([-1, 0, 1])
+            y += area.random.choice([-1, 0, 1])
 
             if x < 0 or y < 0 or x >= len(tiles) or y >= len(tiles):
                 continue
@@ -43,8 +41,8 @@ class EnemySystem:
         # Empty spaces are denoted by False
         x, y = 0, 0
         while tiles[y][x]:
-            x = random.randint(0, len(tiles) - 1)
-            y = random.randint(0, len(tiles) - 1)
+            x = area.random.randint(0, len(tiles) - 1)
+            y = area.random.randint(0, len(tiles) - 1)
 
             if not tiles[y][x]:
                 return x, y

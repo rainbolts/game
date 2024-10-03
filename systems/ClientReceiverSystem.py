@@ -2,17 +2,22 @@ import json
 from socket import socket
 
 from models.Player import Player
+from systems.AreaSystem import AreaSystem
 
 
 class ClientReceiverSystem:
-    def __init__(self, connection: socket, players: dict[str, Player]):
-        self.connection = connection
+    def __init__(self,
+                 server: socket,
+                 players: dict[str, Player],
+                 area_system: AreaSystem):
+        self.server = server
         self.players = players
+        self.area_system = area_system
         self.client_id: str | None = None
         self.buffer: str = ''
 
     def receive_updates(self):
-        data = self.connection.recv(1024)
+        data = self.server.recv(1024)
         if not data:
             raise ConnectionResetError('Server disconnected.')
 
@@ -26,7 +31,11 @@ class ClientReceiverSystem:
                 self.client_id = int(client_id)
 
             elif message.startswith('{'):
+                print('Received:', message)
                 update = json.loads(message)
+
+                area_seed = update['area_seed']
+                self.area_system.generate_area(area_seed)
 
                 player_positions = update['player_positions']
                 for player_position in player_positions:
@@ -36,4 +45,5 @@ class ClientReceiverSystem:
                     if player_id not in self.players:
                         self.players[player_id] = Player((x, y))
                     else:
-                        self.players[player_id].position = (x, y)
+                        player = self.players[player_id]
+                        player.move_absolute(x, y)

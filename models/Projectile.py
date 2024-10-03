@@ -19,7 +19,7 @@ class Projectile(Entity):
     def get_collision_behaviors(self) -> list[CollisionBehavior]:
         return [CollisionBehavior.DISAPPEAR, CollisionBehavior.DAMAGE]
 
-    def get_preferred_velocity(self, _):
+    def get_preferred_velocity(self, _) -> Vector2:
         return self._preferred_velocity
 
     def set_preferred_velocity(self, velocity: Vector2):

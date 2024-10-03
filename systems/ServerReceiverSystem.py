@@ -2,11 +2,15 @@ import random
 from socket import socket
 
 from models.Client import Client
-from systems.MovementSystem import MovementSystem, Direction
+from models.Direction import Direction
+from models.Player import Player
+from systems.MovementSystem import MovementSystem
 
 
 class ServerReceiverSystem:
-    def __init__(self, clients: dict[socket, Client], movement_system: MovementSystem):
+    def __init__(self,
+                 clients: dict[socket, Client],
+                 movement_system: MovementSystem):
         self.clients = clients
         self.movement_system = movement_system
         self.client_buffer: dict[Client, str] = {}
@@ -31,15 +35,14 @@ class ServerReceiverSystem:
 
             elif message.startswith('move:'):
                 direction = Direction(int(message.split(':')[1]))
-                client = self.clients[client.connection]
                 self.movement_system.start_moving(client.player, direction)
 
             elif message.startswith('stop:'):
                 direction = Direction(int(message.split(':')[1]))
-                client = self.clients[client.connection]
                 self.movement_system.stop_moving(client.player, direction)
 
     def spawn_player(self, connection):
-        x = random.randint(0, 600)
-        y = random.randint(0, 400)
-        self.clients[connection].player.position = (x, y)
+        x = random.randint(400, 600)
+        y = random.randint(400, 600)
+        client = self.clients[connection]
+        client.player = Player((x, y))
