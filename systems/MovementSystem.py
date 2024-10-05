@@ -5,6 +5,7 @@ from models.Behaviors import CollisionBehavior
 from models.Direction import Direction
 from models.Entity import Entity
 from models.Player import Player
+from models.Projectile import Projectile
 
 
 class MovementSystem:
@@ -29,6 +30,14 @@ class MovementSystem:
             if actual_velocity == (0, 0):
                 continue
             player.move_relative(*actual_velocity)
+
+        for projectile in Projectile.projectile_group:
+            actual_velocity = self.try_get_actual_velocity(Direction(0), projectile, area)
+            if actual_velocity is None:
+                continue
+            if actual_velocity == (0, 0):
+                continue
+            projectile.move_relative(*actual_velocity)
 
     def try_get_actual_velocity(self, direction: Direction, entity: Entity, area: Area) -> tuple[float, float] | None:
         preferred_velocity = entity.get_preferred_velocity(direction)

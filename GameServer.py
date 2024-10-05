@@ -4,9 +4,11 @@ import threading
 
 from models.Client import Client
 from systems.AreaSystem import AreaSystem
+from systems.DamageSystem import DamageSystem
 from systems.ServerBroadcastSystem import ServerBroadcastSystem
 from systems.MovementSystem import MovementSystem
 from systems.ServerReceiverSystem import ServerReceiverSystem
+from systems.SkillSystem import SkillSystem
 
 
 class GameServer:
@@ -24,8 +26,10 @@ class GameServer:
 
         self.area_system = AreaSystem()
         self.movement_system = MovementSystem()
+        self.skill_system = SkillSystem()
+        self.damage_system = DamageSystem()
         self.broadcaster = ServerBroadcastSystem(self.clients, self.area_system)
-        self.receiver = ServerReceiverSystem(self.clients, self.movement_system)
+        self.receiver = ServerReceiverSystem(self.clients, self.movement_system, self.skill_system)
 
     def run(self):
         self.running = True
@@ -69,7 +73,6 @@ class GameServer:
         """
         pygame.display.set_caption('Server')
         clock = pygame.time.Clock()
-        self.running = True
 
         while self.running:
             for event in pygame.event.get():
@@ -78,6 +81,8 @@ class GameServer:
 
             self.area_system.generate_area()
             self.movement_system.move(self.area_system.current_area)
+            self.skill_system.use_skills()
+            self.damage_system.apply_damage()
             self.broadcaster.send_updates()
             clock.tick(60)
 

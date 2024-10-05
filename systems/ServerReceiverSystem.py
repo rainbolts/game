@@ -1,18 +1,23 @@
 import random
 from socket import socket
 
+from pygame import Vector2
+
 from models.Client import Client
 from models.Direction import Direction
 from models.Player import Player
 from systems.MovementSystem import MovementSystem
+from systems.SkillSystem import SkillSystem
 
 
 class ServerReceiverSystem:
     def __init__(self,
                  clients: dict[socket, Client],
-                 movement_system: MovementSystem):
+                 movement_system: MovementSystem,
+                 skill_system: SkillSystem):
         self.clients = clients
         self.movement_system = movement_system
+        self.skill_system = skill_system
         self.client_buffer: dict[Client, str] = {}
 
     def receive_updates(self, client: Client, address: str):
@@ -40,6 +45,15 @@ class ServerReceiverSystem:
             elif message.startswith('stop:'):
                 direction = Direction(int(message.split(':')[1]))
                 self.movement_system.stop_moving(client.player, direction)
+
+            elif message.startswith('attack:'):
+                angle, magnitude = message.split(':')[1].split(',')
+                destination_vector = Vector2()
+                destination_vector.from_polar((float(magnitude), float(angle)))
+                self.skill_system.start_attacking(client.player, destination_vector)
+
+            elif message.startswith('attack_stop'):
+                self.skill_system.stop_attacking(client.player)
 
     def spawn_player(self, connection):
         x = random.randint(400, 600)

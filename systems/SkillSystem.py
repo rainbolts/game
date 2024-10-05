@@ -1,15 +1,26 @@
-from pygame.key import ScancodeWrapper
+from pygame import Vector2
 
-from models.Entity import Entity
+from models.Player import Player
+from models.Projectile import Projectile
+from models.skills.Skill import Skill
 
 
 class SkillSystem:
-    def use_skills(self, keys: ScancodeWrapper, mouse_position: tuple[int, int]):
-        for entity in Entity.entity_group:
-            preferred_skills = entity.get_preferred_skills(keys, mouse_position)
+    def __init__(self) -> None:
+        self.attacking: dict[Player, Vector2] = {}
 
-            for skill in preferred_skills:
-                skill.spawn_projectiles()
+    def start_attacking(self, player, destination_vector: Vector2) -> None:
+        self.attacking[player] = destination_vector
 
-        for entity in Entity.entity_group:
-            entity.age()
+    def stop_attacking(self, player: Player) -> None:
+        if player in self.attacking:
+            del self.attacking[player]
+
+    def use_skills(self) -> None:
+        for player, destination_vector in self.attacking.copy().items():
+            origin_x, origin_y = map(int, player.rect.center)
+            skill = Skill((origin_x, origin_y), destination_vector)
+            skill.spawn_projectiles()
+
+        for projectile in Projectile.projectile_group:
+            projectile.age()

@@ -1,7 +1,9 @@
 import json
 from socket import socket
 
+from models.Enemy import Enemy
 from models.Player import Player
+from models.Projectile import Projectile
 from systems.AreaSystem import AreaSystem
 
 
@@ -31,7 +33,6 @@ class ClientReceiverSystem:
                 self.client_id = int(client_id)
 
             elif message.startswith('{'):
-                print('Received:', message)
                 update = json.loads(message)
 
                 area_seed = update['area_seed']
@@ -47,3 +48,19 @@ class ClientReceiverSystem:
                     else:
                         player = self.players[player_id]
                         player.move_absolute(x, y)
+
+                enemy_positions = update['enemy_positions']
+                for enemy in Enemy.enemy_group:
+                    enemy.kill()
+                for enemy_position in enemy_positions:
+                    x = int(enemy_position['x'])
+                    y = int(enemy_position['y'])
+                    Enemy((x, y), 0)
+
+                projectile_positions = update['projectile_positions']
+                for projectile in Projectile.projectile_group:
+                    projectile.kill()
+                for projectile_position in projectile_positions:
+                    x = int(projectile_position['x'])
+                    y = int(projectile_position['y'])
+                    Projectile((x, y), 0)

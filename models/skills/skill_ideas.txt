@@ -1,10 +1,12 @@
-Multiply X
-Fork multiply X
-Pierce (no angle)
-Chain (dynamic angle)
-Wall bounce
-Return to player
-Return to origin
+-- Misc. --
+Multiple
+
+-- Change collision behavior --
+Bounce
+Pierce
+Stick
+Chain
+Fork
 
 -- Change the spread --
 Parallel
@@ -22,6 +24,9 @@ Random
 Homing
 Spiral
 Circle
+Return to player
+Return to origin
+Stationary
 
 -- Change the initial vector --
 Default (player -> cursor)
