@@ -1,3 +1,5 @@
+from typing import Any
+
 from pygame import Vector2
 from pygame.sprite import Group
 
@@ -10,20 +12,17 @@ class Projectile(Entity):
 
     def __init__(self, spawn: tuple[int, int], time_to_live: int):
         super().__init__(spawn, 10, 10, (0, 255, 255), time_to_live)
-
-        self.damage = 1
         self.projectile_group.add(self)
 
+        self.damage = 1
         self._preferred_velocity = Vector2()
 
     def get_collision_behaviors(self) -> list[CollisionBehavior]:
         return [CollisionBehavior.DISAPPEAR, CollisionBehavior.DAMAGE]
 
-    def get_preferred_velocity(self, _) -> Vector2:
-        return self._preferred_velocity
-
     def set_preferred_velocity(self, velocity: Vector2):
         self._preferred_velocity = velocity
 
-    def get_preferred_skills(self, *_):
-        return []
+    @staticmethod
+    def from_broadcast(data: dict[str, Any]) -> 'Projectile':
+        return Projectile((int(data['x']), int(data['y'])), 0)

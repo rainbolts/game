@@ -17,7 +17,7 @@ class GameClient:
         self.port = 8888
         self.running = False
         self.attacking = False
-        self.players: dict[str, Player] = {}
+        self.player: Player | None = None
         self.clock = pygame.time.Clock()
 
         self.settings = Settings()
@@ -25,7 +25,7 @@ class GameClient:
         self.server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
         self.area_system = AreaSystem()
-        self.receiver = ClientReceiverSystem(self.server, self.players, self.area_system)
+        self.receiver = ClientReceiverSystem(self.server, self.area_system)
 
     def run(self):
         self.running = True
@@ -50,11 +50,13 @@ class GameClient:
         while self.running:
             self.screen.fill((0, 0, 0))
 
-            if self.receiver.client_id in self.players:
-                x, y = self.players[self.receiver.client_id].rect.x, self.players[self.receiver.client_id].rect.y
-                offset = (int(round(self.settings.game_width / 2 - x)), int(round(self.settings.game_height / 2 - y)))
-            else:
-                offset = (0, 0)
+            offset = (0, 0)
+            for player in Player.player_group:
+                if self.receiver.client_id == player.client_id:
+                    self.player = player
+                    x, y = self.player.get_center()
+                    offset = (int(round(self.settings.game_width / 2 - x)), int(round(self.settings.game_height / 2 - y)))
+                    break
 
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
@@ -70,7 +72,7 @@ class GameClient:
                     elif self.settings.is_hotkey(event.key, Controls.MOVE_RIGHT):
                         self.server.sendall(f'move:{Direction.RIGHT.value}\n'.encode())
                     elif self.settings.is_hotkey(event.key, Controls.SKILL1):
-                        self.server.sendall('attack\n'.encode())
+                        self.attack(offset)
 
                 elif event.type == pygame.KEYUP:
                     if self.settings.is_hotkey(event.key, Controls.MOVE_UP):
@@ -82,6 +84,7 @@ class GameClient:
                     elif self.settings.is_hotkey(event.key, Controls.MOVE_RIGHT):
                         self.server.sendall(f'stop:{Direction.RIGHT.value}\n'.encode())
                     elif self.settings.is_hotkey(event.key, Controls.SKILL1):
+                        self.attacking = False
                         self.server.sendall('attack_stop\n'.encode())
 
                 elif event.type == pygame.MOUSEBUTTONDOWN:
@@ -94,11 +97,7 @@ class GameClient:
                     elif self.settings.is_mouse_hotkey(event.button, Controls.MOVE_RIGHT):
                         self.server.sendall(f'move:{Direction.RIGHT.value}\n'.encode())
                     elif self.settings.is_mouse_hotkey(event.button, Controls.SKILL1):
-                        if self.receiver.client_id not in self.players:
-                            continue
-                        self.attacking = True
-                        angle, magnitude = self.settings.vector_to_cursor(self.players[self.receiver.client_id], offset)
-                        self.server.sendall(f'attack:{angle},{magnitude}\n'.encode())
+                        self.attack(offset)
 
                 elif event.type == pygame.MOUSEBUTTONUP:
                     if self.settings.is_mouse_hotkey(event.button, Controls.MOVE_UP):
@@ -115,11 +114,12 @@ class GameClient:
 
                 elif event.type == pygame.MOUSEMOTION:
                     if self.attacking:
-                        angle, magnitude = self.settings.vector_to_cursor(self.players[self.receiver.client_id], offset)
+                        angle, magnitude = self.settings.vector_to_cursor(self.player, offset)
                         self.server.sendall(f'attack:{angle},{magnitude}\n'.encode())
 
             for entity in Entity.entity_group:
-                self.screen.blit(entity.image, (entity.rect.x + offset[0], entity.rect.y + offset[1]))
+                entity_location = entity.get_pixel_location()
+                self.screen.blit(entity.image, (entity_location[0] + offset[0], entity_location[1] + offset[1]))
 
             if self.area_system.current_area:
                 area_surface = self.area_system.current_area.surface
@@ -132,6 +132,13 @@ class GameClient:
 
         pygame.quit()
         self.server.close()
+
+    def attack(self, offset):
+        if not self.player:
+            return
+        self.attacking = True
+        angle, magnitude = self.settings.vector_to_cursor(self.player, offset)
+        self.server.sendall(f'attack:{angle},{magnitude}\n'.encode())
 
     def update_fps(self):
         fps = self.clock.get_fps()

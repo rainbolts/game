@@ -5,6 +5,7 @@ import threading
 from models.Client import Client
 from systems.AreaSystem import AreaSystem
 from systems.DamageSystem import DamageSystem
+from systems.PlayerSpawnSystem import PlayerSpawnSystem
 from systems.ServerBroadcastSystem import ServerBroadcastSystem
 from systems.MovementSystem import MovementSystem
 from systems.ServerReceiverSystem import ServerReceiverSystem
@@ -25,6 +26,7 @@ class GameServer:
         self.clients: dict[socket, Client] = {}
 
         self.area_system = AreaSystem()
+        self.player_spawner = PlayerSpawnSystem(self.area_system)
         self.movement_system = MovementSystem()
         self.skill_system = SkillSystem()
         self.damage_system = DamageSystem()
@@ -80,6 +82,7 @@ class GameServer:
                     self.running = False
 
             self.area_system.generate_area()
+            self.player_spawner.spawn_players(self.clients.values())
             self.movement_system.move(self.area_system.current_area)
             self.skill_system.use_skills()
             self.damage_system.apply_damage()

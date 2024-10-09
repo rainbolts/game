@@ -1,11 +1,10 @@
 from abc import ABC
+from typing import Any
 
 from pygame import mask, Surface, Vector2
-from pygame.key import ScancodeWrapper
 from pygame.sprite import Sprite, Group
 
 from models.Behaviors import CollisionBehavior
-from models.Direction import Direction
 
 
 class Entity(Sprite, ABC):
@@ -15,26 +14,23 @@ class Entity(Sprite, ABC):
                  time_to_live: int = None):
         super().__init__()
 
+        self.width = width
+        self.height = height
+
         self.image = Surface((width, height))
         self.image.fill(color)
-        self.rect = self.image.get_rect()
-        self.rect.x = spawn[0]
-        self.rect.y = spawn[1]
         self.mask = mask.from_surface(self.image)
         self.time_to_live = time_to_live
         self.entity_group.add(self)
 
         self._preferred_velocity = Vector2()
-        self._precise_location: tuple[float, float] = self.rect.x, self.rect.y
+        self._precise_location: tuple[float, float] = spawn
 
     def get_collision_behaviors(self) -> list[CollisionBehavior]:
-        raise NotImplementedError
+        return []
 
-    def get_preferred_velocity(self, direction: Direction) -> Vector2:
-        raise NotImplementedError
-
-    def get_preferred_skills(self, keys: ScancodeWrapper, mouse_position: tuple[int, int]) -> Vector2:
-        raise NotImplementedError
+    def get_preferred_velocity(self) -> Vector2:
+        return self._preferred_velocity
 
     def age(self):
         if self.time_to_live is None:
@@ -45,13 +41,18 @@ class Entity(Sprite, ABC):
 
         self.time_to_live -= 1
 
+    def get_pixel_location(self) -> tuple[int, int]:
+        return int(round(self._precise_location[0])), int(round(self._precise_location[1]))
+
     def get_precise_location(self) -> tuple[float, float]:
         return self._precise_location
 
+    def get_center(self) -> tuple[int, int]:
+        top_left = self.get_pixel_location()
+        return top_left[0] + self.width // 2, top_left[1] + self.height // 2
+
     def move_absolute(self, x: float, y: float):
         self._precise_location = x, y
-        self.rect.x = int(round(x))
-        self.rect.y = int(round(y))
 
     def move_relative(self, dx: float, dy: float):
         rounded_dx = int(round(dx))
@@ -59,14 +60,16 @@ class Entity(Sprite, ABC):
         if rounded_dx == 0 and rounded_dy == 0:
             return
 
-        self.rect.x = int(round(self._precise_location[0]))
-        self.rect.y = int(round(self._precise_location[1]))
         self._precise_location = self._precise_location[0] + dx, self._precise_location[1] + dy
 
-    @property
-    def width(self):
-        return self.rect.width
+    def to_broadcast(self) -> dict[str, Any]:
+        return {
+            'module': self.__class__.__module__,
+            'class': self.__class__.__name__,
+            'x': int(round(self._precise_location[0])),
+            'y': int(round(self._precise_location[1]))
+        }
 
-    @property
-    def height(self):
-        return self.rect.height
+    @staticmethod
+    def from_broadcast(data: dict[str, Any]) -> 'Entity':
+        raise NotImplementedError('This method must be overridden in a subclass.')

@@ -1,4 +1,4 @@
-from pygame import Vector2, Mask
+from pygame import Vector2
 
 from models.Area import Area
 from models.Behaviors import CollisionBehavior
@@ -24,7 +24,8 @@ class MovementSystem:
 
     def move(self, area: Area):
         for player in self.moving:
-            actual_velocity = self.try_get_actual_velocity(self.moving[player], player, area)
+            player.set_preferred_velocity(self.moving[player])
+            actual_velocity = self.try_get_actual_velocity(player, area)
             if actual_velocity is None:
                 continue
             if actual_velocity == (0, 0):
@@ -32,15 +33,15 @@ class MovementSystem:
             player.move_relative(*actual_velocity)
 
         for projectile in Projectile.projectile_group:
-            actual_velocity = self.try_get_actual_velocity(Direction(0), projectile, area)
+            actual_velocity = self.try_get_actual_velocity(projectile, area)
             if actual_velocity is None:
                 continue
             if actual_velocity == (0, 0):
                 continue
             projectile.move_relative(*actual_velocity)
 
-    def try_get_actual_velocity(self, direction: Direction, entity: Entity, area: Area) -> tuple[float, float] | None:
-        preferred_velocity = entity.get_preferred_velocity(direction)
+    def try_get_actual_velocity(self, entity: Entity, area: Area) -> tuple[float, float] | None:
+        preferred_velocity = entity.get_preferred_velocity()
         if preferred_velocity is None:
             return None
         if preferred_velocity == (0, 0):

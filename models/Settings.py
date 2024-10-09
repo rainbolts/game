@@ -45,7 +45,7 @@ class Settings:
     @staticmethod
     def vector_to_cursor(player: Player, player_offset: tuple[int, int]) -> tuple[float, float]:
         mouse_x, mouse_y = pygame.mouse.get_pos()
-        player_x, player_y = map(int, player.rect.center)
+        player_x, player_y = map(int, player.get_center())
         x = mouse_x - player_x - player_offset[0]
         y = -1 * (mouse_y - player_y - player_offset[1])
         angle = math.atan2(y, x) / math.pi * 180

@@ -18,8 +18,8 @@ class SkillSystem:
 
     def use_skills(self) -> None:
         for player, destination_vector in self.attacking.copy().items():
-            origin_x, origin_y = map(int, player.rect.center)
-            skill = Skill((origin_x, origin_y), destination_vector)
+            origin = player.get_center()
+            skill = Skill(origin, destination_vector)
             skill.spawn_projectiles()
 
         for projectile in Projectile.projectile_group:
