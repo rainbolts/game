@@ -1,5 +1,6 @@
 from models.Behaviors import CollisionBehavior
-from models.Enemy import Enemy
+from models.Enemy import Enemy, BossEnemy
+from models.ExitDoor import ExitDoor
 from models.Projectile import Projectile
 
 
@@ -18,6 +19,8 @@ class DamageSystem:
                 if CollisionBehavior.DAMAGE in collision_behaviors:
                     enemy.health -= projectile.damage
                     if enemy.health <= 0:
+                        if isinstance(enemy, BossEnemy):
+                            ExitDoor(enemy.get_pixel_location())
                         enemy.kill()
 
                 if CollisionBehavior.DISAPPEAR in collision_behaviors:

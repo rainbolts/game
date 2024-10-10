@@ -43,4 +43,3 @@ class BossEnemy(Enemy):
     @staticmethod
     def from_broadcast(data: dict[str, Any]) -> 'BossEnemy':
         return BossEnemy((int(data['x']), int(data['y'])), int(data['health']))
-

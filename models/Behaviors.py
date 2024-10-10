@@ -6,3 +6,4 @@ class CollisionBehavior(IntEnum):
     DISAPPEAR = 2
     DAMAGE = 3
     STICKY = 4
+    AREA_TRANSITION = 5
