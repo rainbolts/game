@@ -6,10 +6,12 @@ from models.Direction import Direction
 from models.Entity import Entity
 from models.Player import Player
 from models.Projectile import Projectile
+from systems.AreaSystem import AreaSystem
 
 
 class MovementSystem:
-    def __init__(self):
+    def __init__(self, area_system: AreaSystem):
+        self.area_system = area_system
         self.moving: dict[Player, Direction] = {}
 
     def start_moving(self, player, direction: Direction):
@@ -22,23 +24,26 @@ class MovementSystem:
             return
         self.moving[player] = self.moving[player] & ~direction
 
-    def move(self, area: Area):
-        for player in self.moving:
-            player.set_preferred_velocity(self.moving[player])
-            actual_velocity = self.try_get_actual_velocity(player, area)
-            if actual_velocity is None:
-                continue
-            if actual_velocity == (0, 0):
-                continue
-            player.move_relative(*actual_velocity)
+    def move(self):
+        for area in self.area_system.areas:
+            for player in area.players:
+                if player not in self.moving:
+                    continue
 
-        for projectile in Projectile.projectile_group:
-            actual_velocity = self.try_get_actual_velocity(projectile, area)
-            if actual_velocity is None:
-                continue
-            if actual_velocity == (0, 0):
-                continue
-            projectile.move_relative(*actual_velocity)
+                player.set_preferred_velocity(self.moving[player])
+
+                actual_velocity = self.try_get_actual_velocity(player, area)
+                if actual_velocity is None or actual_velocity == (0, 0):
+                    continue
+
+                player.move_relative(*actual_velocity)
+
+            for projectile in area.projectiles:
+                actual_velocity = self.try_get_actual_velocity(projectile, area)
+                if actual_velocity is None or actual_velocity == (0, 0):
+                    continue
+
+                projectile.move_relative(*actual_velocity)
 
     def try_get_actual_velocity(self, entity: Entity, area: Area) -> tuple[float, float] | None:
         preferred_velocity = entity.get_preferred_velocity()

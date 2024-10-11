@@ -6,7 +6,6 @@ from models.Direction import Direction
 from models.Entity import Entity
 from models.Player import Player
 from models.Settings import Settings, Controls
-from systems.AreaSystem import AreaSystem
 from systems.ClientReceiverSystem import ClientReceiverSystem
 
 
@@ -24,8 +23,7 @@ class GameClient:
         self.screen = pygame.display.set_mode((self.settings.game_width, self.settings.game_height))
         self.server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
-        self.area_system = AreaSystem()
-        self.receiver = ClientReceiverSystem(self.server, self.area_system)
+        self.receiver = ClientReceiverSystem(self.server)
 
     def run(self):
         self.running = True
@@ -51,12 +49,13 @@ class GameClient:
             self.screen.fill((0, 0, 0))
 
             offset = (0, 0)
-            for player in Player.player_group:
-                if self.receiver.client_id == player.client_id:
-                    self.player = player
-                    x, y = self.player.get_center()
-                    offset = (int(round(self.settings.game_width / 2 - x)), int(round(self.settings.game_height / 2 - y)))
-                    break
+            if self.receiver.area:
+                for player in self.receiver.area.players:
+                    if self.receiver.client_id == player.client_id:
+                        self.player = player
+                        x, y = self.player.get_center()
+                        offset = (int(round(self.settings.game_width / 2 - x)), int(round(self.settings.game_height / 2 - y)))
+                        break
 
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
@@ -117,13 +116,24 @@ class GameClient:
                         angle, magnitude = self.settings.vector_to_cursor(self.player, offset)
                         self.server.sendall(f'attack:{angle},{magnitude}\n'.encode())
 
-            for entity in Entity.entity_group:
-                entity_location = entity.get_pixel_location()
-                self.screen.blit(entity.image, (entity_location[0] + offset[0], entity_location[1] + offset[1]))
+            if self.receiver.area:
+                for player in self.receiver.area.players:
+                    entity_location = player.get_pixel_location()
+                    self.screen.blit(player.image, (entity_location[0] + offset[0], entity_location[1] + offset[1]))
 
-            if self.area_system.current_area:
-                area_surface = self.area_system.current_area.surface
-                self.screen.blit(area_surface, offset)
+                for projectile in self.receiver.area.projectiles:
+                    entity_location = projectile.get_pixel_location()
+                    self.screen.blit(projectile.image, (entity_location[0] + offset[0], entity_location[1] + offset[1]))
+
+                for enemy in self.receiver.area.enemies:
+                    entity_location = enemy.get_pixel_location()
+                    self.screen.blit(enemy.image, (entity_location[0] + offset[0], entity_location[1] + offset[1]))
+
+                if self.receiver.area.exit:
+                    entity_location = self.receiver.area.exit.get_pixel_location()
+                    self.screen.blit(self.receiver.area.exit.image, (entity_location[0] + offset[0], entity_location[1] + offset[1]))
+
+                self.screen.blit(self.receiver.area.surface, offset)
 
             self.update_fps()
 

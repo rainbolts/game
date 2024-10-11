@@ -1,19 +1,14 @@
 from typing import Any
 
 from pygame import Vector2
-from pygame.sprite import Group
 
 from models.Behaviors import CollisionBehavior
 from models.Entity import Entity
 
 
 class Projectile(Entity):
-    projectile_group = Group()
-
     def __init__(self, spawn: tuple[int, int], time_to_live: int):
         super().__init__(spawn, 10, 10, (0, 255, 255), time_to_live)
-        self.projectile_group.add(self)
-
         self.damage = 1
         self._preferred_velocity = Vector2()
 

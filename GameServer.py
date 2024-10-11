@@ -5,7 +5,6 @@ import threading
 from models.Client import Client
 from systems.AreaSystem import AreaSystem
 from systems.DamageSystem import DamageSystem
-from systems.PlayerSpawnSystem import PlayerSpawnSystem
 from systems.ServerBroadcastSystem import ServerBroadcastSystem
 from systems.MovementSystem import MovementSystem
 from systems.ServerReceiverSystem import ServerReceiverSystem
@@ -26,10 +25,9 @@ class GameServer:
         self.clients: dict[socket, Client] = {}
 
         self.area_system = AreaSystem()
-        self.player_spawner = PlayerSpawnSystem(self.area_system)
-        self.movement_system = MovementSystem()
-        self.skill_system = SkillSystem()
-        self.damage_system = DamageSystem()
+        self.movement_system = MovementSystem(self.area_system)
+        self.skill_system = SkillSystem(self.area_system)
+        self.damage_system = DamageSystem(self.area_system)
         self.broadcaster = ServerBroadcastSystem(self.clients, self.area_system)
         self.receiver = ServerReceiverSystem(self.clients, self.movement_system, self.skill_system)
 
@@ -81,12 +79,14 @@ class GameServer:
                 if event.type == pygame.QUIT:
                     self.running = False
 
-            self.area_system.generate_area()
-            self.player_spawner.spawn_players(self.clients.values())
-            self.movement_system.move(self.area_system.current_area)
+            clients = list(self.clients.values())
+
+            self.area_system.run_once(clients)
+            self.movement_system.move()
             self.skill_system.use_skills()
             self.damage_system.apply_damage()
             self.broadcaster.send_updates()
+
             clock.tick(60)
 
         pygame.quit()

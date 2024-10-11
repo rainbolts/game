@@ -2,19 +2,14 @@ import math
 from typing import Any
 
 from pygame import Vector2
-from pygame.sprite import Group
 
 from models.Direction import Direction
 from models.Entity import Entity
 
 
 class Player(Entity):
-    player_group = Group()
-
     def __init__(self, client_id: int | None, spawn: tuple[int, int]):
         super().__init__(spawn, 40, 40, (0, 255, 0))
-        self.player_group.add(self)
-
         self.client_id = client_id
         self.movement_speed: int = 10
 

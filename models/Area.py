@@ -3,6 +3,12 @@ from enum import IntEnum
 
 import pygame
 from pygame import Surface
+from pygame.sprite import Group
+
+from models.Enemy import Enemy, EnemyType, NormalEnemy, BossEnemy
+from models.ExitDoor import ExitDoor
+from models.Player import Player
+from models.Projectile import Projectile
 
 
 class TileType(IntEnum):
@@ -14,7 +20,7 @@ class TileType(IntEnum):
 
 
 class Area:
-    def __init__(self, map_size: int, seed: int | None = None):
+    def __init__(self, seed: int | None = None):
         import random
         if seed is None:
             seed = random.randrange(sys.maxsize)
@@ -24,12 +30,19 @@ class Area:
         self._spawn = None
         self._boss = None
 
+        map_size = 2000
+
         self.tiles = self.generate_tiles(40)
         self.scale = map_size // len(self.tiles)
         self.populate_tiles(self.tiles)
 
         self.surface = self._draw(map_size)
         self.mask = pygame.mask.from_surface(self.surface)
+
+        self.exit: ExitDoor | None = None
+        self.players = Group()
+        self.projectiles = Group()
+        self.enemies = Group()
 
     def get_spawn(self) -> tuple[int, int]:
         unscaled_spawn = self._spawn
@@ -161,3 +174,39 @@ class Area:
                         stack.append((nx, ny))
 
         return area_size
+
+    def to_broadcast(self):
+        return {
+            'seed': self.seed,
+            'players': [player.to_broadcast() for player in self.players],
+            'projectiles': [projectile.to_broadcast() for projectile in self.projectiles],
+            'enemies': [enemy.to_broadcast() for enemy in self.enemies],
+            'exit': self.exit.to_broadcast() if self.exit else None
+        }
+
+    @staticmethod
+    def from_broadcast(update: dict, diff_from_area = None) -> 'Area':
+        if diff_from_area and diff_from_area.seed == update['seed']:
+            area = diff_from_area
+        else:
+            area = Area(update['seed'])
+
+        area.players.empty()
+        area.players.add([Player.from_broadcast(player) for player in update['players']])
+
+        area.projectiles.empty()
+        area.projectiles.add([Projectile.from_broadcast(projectile) for projectile in update['projectiles']])
+
+        area.enemies.empty()
+        for enemy_update in update['enemies']:
+            enemy_type = int(enemy_update['type'])
+            if enemy_type == EnemyType.NORMAL:
+                area.enemies.add(NormalEnemy.from_broadcast(enemy_update))
+            elif enemy_type == EnemyType.BOSS:
+                area.enemies.add(BossEnemy.from_broadcast(enemy_update))
+
+        if area.exit:
+            area.exit.kill()
+        area.exit = ExitDoor.from_broadcast(update['exit']) if update['exit'] else None
+
+        return area

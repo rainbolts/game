@@ -1,17 +1,14 @@
-import importlib
 import json
 from socket import socket
 
-from models.Entity import Entity
-from systems.AreaSystem import AreaSystem
+from models.Area import Area
 
 
 class ClientReceiverSystem:
     def __init__(self,
-                 server: socket,
-                 area_system: AreaSystem):
+                 server: socket):
         self.server = server
-        self.area_system = area_system
+        self.area: Area | None = None
         self.client_id: int | None = None
         self.buffer: str = ''
 
@@ -31,15 +28,4 @@ class ClientReceiverSystem:
 
             elif message.startswith('{'):
                 update = json.loads(message)
-
-                area_seed = update['area_seed']
-                self.area_system.generate_area(area_seed)
-
-                entity_updates = update['entities']
-                for entity in Entity.entity_group:
-                    entity.kill()
-                for entity_update in entity_updates:
-                    module = importlib.import_module(entity_update['module'])
-                    klass = getattr(module, entity_update['class'])
-                    klass.from_broadcast(entity_update)
-
+                self.area = Area.from_broadcast(update, self.area)

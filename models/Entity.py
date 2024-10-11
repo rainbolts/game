@@ -2,14 +2,12 @@ from abc import ABC
 from typing import Any
 
 from pygame import mask, Surface, Vector2
-from pygame.sprite import Sprite, Group
+from pygame.sprite import Sprite
 
 from models.Behaviors import CollisionBehavior
 
 
 class Entity(Sprite, ABC):
-    entity_group = Group()
-
     def __init__(self, spawn: tuple[int, int], width: int, height: int, color: tuple[int, int, int],
                  time_to_live: int = None):
         super().__init__()
@@ -21,7 +19,6 @@ class Entity(Sprite, ABC):
         self.image.fill(color)
         self.mask = mask.from_surface(self.image)
         self.time_to_live = time_to_live
-        self.entity_group.add(self)
 
         self._preferred_velocity = Vector2()
         self._precise_location: tuple[float, float] = spawn
@@ -64,8 +61,6 @@ class Entity(Sprite, ABC):
 
     def to_broadcast(self) -> dict[str, Any]:
         return {
-            'module': self.__class__.__module__,
-            'class': self.__class__.__name__,
             'x': int(round(self._precise_location[0])),
             'y': int(round(self._precise_location[1]))
         }
