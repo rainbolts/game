@@ -5,6 +5,7 @@ import threading
 from models.Client import Client
 from systems.AreaSystem import AreaSystem
 from systems.DamageSystem import DamageSystem
+from systems.LootSystem import LootSystem
 from systems.ServerBroadcastSystem import ServerBroadcastSystem
 from systems.MovementSystem import MovementSystem
 from systems.ServerReceiverSystem import ServerReceiverSystem
@@ -25,9 +26,10 @@ class GameServer:
         self.clients: dict[socket, Client] = {}
 
         self.area_system = AreaSystem()
+        self.loot_system = LootSystem()
         self.movement_system = MovementSystem(self.area_system)
         self.skill_system = SkillSystem(self.area_system)
-        self.damage_system = DamageSystem(self.area_system)
+        self.damage_system = DamageSystem(self.area_system, self.loot_system)
         self.broadcaster = ServerBroadcastSystem(self.clients, self.area_system)
         self.receiver = ServerReceiverSystem(self.clients, self.movement_system, self.skill_system)
 

@@ -5,8 +5,9 @@ import pygame
 from pygame import Surface
 from pygame.sprite import Group
 
-from models.Enemy import Enemy, EnemyType, NormalEnemy, BossEnemy
+from models.Enemy import EnemyType, NormalEnemy, BossEnemy
 from models.ExitDoor import ExitDoor
+from models.Loot import LootType, RingLoot
 from models.Player import Player
 from models.Projectile import Projectile
 
@@ -43,6 +44,7 @@ class Area:
         self.players = Group()
         self.projectiles = Group()
         self.enemies = Group()
+        self.loots = Group()
 
     def get_spawn(self) -> tuple[int, int]:
         unscaled_spawn = self._spawn
@@ -181,6 +183,7 @@ class Area:
             'players': [player.to_broadcast() for player in self.players],
             'projectiles': [projectile.to_broadcast() for projectile in self.projectiles],
             'enemies': [enemy.to_broadcast() for enemy in self.enemies],
+            'loot': [loot.to_broadcast() for loot in self.loots],
             'exit': self.exit.to_broadcast() if self.exit else None
         }
 
@@ -204,6 +207,16 @@ class Area:
                 area.enemies.add(NormalEnemy.from_broadcast(enemy_update))
             elif enemy_type == EnemyType.BOSS:
                 area.enemies.add(BossEnemy.from_broadcast(enemy_update))
+            else:
+                raise ValueError(f'Unknown enemy type: {enemy_type}')
+
+        area.loots.empty()
+        for loot_update in update['loot']:
+            loot_type = int(loot_update['type'])
+            if loot_type == LootType.RING:
+                area.loots.add(RingLoot.from_broadcast(loot_update))
+            else:
+                raise ValueError(f'Unknown loot type: {loot_type}')
 
         if area.exit:
             area.exit.kill()

@@ -129,6 +129,10 @@ class GameClient:
                     entity_location = enemy.get_pixel_location()
                     self.screen.blit(enemy.image, (entity_location[0] + offset[0], entity_location[1] + offset[1]))
 
+                for loot in self.receiver.area.loots:
+                    entity_location = loot.get_pixel_location()
+                    self.screen.blit(loot.image, (entity_location[0] + offset[0], entity_location[1] + offset[1]))
+
                 if self.receiver.area.exit:
                     entity_location = self.receiver.area.exit.get_pixel_location()
                     self.screen.blit(self.receiver.area.exit.image, (entity_location[0] + offset[0], entity_location[1] + offset[1]))
