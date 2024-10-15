@@ -22,7 +22,7 @@ class Enemy(Entity, ABC):
 
 
 class NormalEnemy(Enemy):
-    def __init__(self, spawn: tuple[int, int], health: int = 30):
+    def __init__(self, spawn: tuple[int, int], health):
         super().__init__(spawn, health, (255, 0, 0))
 
     def to_broadcast(self) -> dict[str, Any]:
@@ -36,7 +36,7 @@ class NormalEnemy(Enemy):
 
 
 class BossEnemy(Enemy):
-    def __init__(self, spawn: tuple[int, int], health: int = 100):
+    def __init__(self, spawn: tuple[int, int], health: int):
         super().__init__(spawn, health, (255, 0, 255))
 
     def to_broadcast(self) -> dict[str, Any]:

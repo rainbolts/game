@@ -1,7 +1,6 @@
 import json
 from socket import socket
 
-from models.Area import Area
 from models.Client import Client
 from systems import AreaSystem
 

@@ -9,7 +9,7 @@ class EnemySystem:
             self.spawn_pack(area)
 
         boss_spawn = area.get_boss_spawn()
-        boss = BossEnemy(boss_spawn)
+        boss = BossEnemy(boss_spawn, 15)
         area.enemies.add(boss)
 
     def spawn_pack(self, area: Area):
@@ -34,7 +34,7 @@ class EnemySystem:
 
             if not tiles[y][x]:
                 enemy_location = x * 40, y * 40
-                enemy = NormalEnemy(enemy_location, 30)
+                enemy = NormalEnemy(enemy_location, 3)
                 area.enemies.add(enemy)
                 break
 

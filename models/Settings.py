@@ -6,7 +6,7 @@ import pygame
 from models.Player import Player
 
 
-class Controls(IntEnum):
+class Control(IntEnum):
     MENU = auto()
     MOVE_LEFT = auto()
     MOVE_RIGHT = auto()
@@ -20,17 +20,17 @@ class Settings:
     def __init__(self) -> None:
         self.game_width, self.game_height = self.get_game_size()
         self.hotkeys = {
-            Controls.MENU: pygame.K_ESCAPE,
-            Controls.MOVE_LEFT: pygame.K_a,
-            Controls.MOVE_RIGHT: pygame.K_d,
-            Controls.MOVE_UP: pygame.K_w,
-            Controls.MOVE_DOWN: pygame.K_s,
-            Controls.SKILL1: pygame.MOUSEBUTTONDOWN,
-            Controls.SKILL2: pygame.MOUSEBUTTONDOWN
+            Control.MENU: pygame.K_ESCAPE,
+            Control.MOVE_LEFT: pygame.K_a,
+            Control.MOVE_RIGHT: pygame.K_d,
+            Control.MOVE_UP: pygame.K_w,
+            Control.MOVE_DOWN: pygame.K_s,
+            Control.SKILL1: pygame.MOUSEBUTTONDOWN,
+            Control.SKILL2: pygame.MOUSEBUTTONDOWN
         }
         self.mouse_hotkeys = {
-            Controls.SKILL1: 1,
-            Controls.SKILL2: 3
+            Control.SKILL1: 1,
+            Control.SKILL2: 3
         }
 
     @staticmethod
@@ -39,7 +39,6 @@ class Settings:
         aspect_ratio = display_info.current_w / display_info.current_h
         game_height = 720
         game_width = int(game_height * aspect_ratio)
-
         return game_width, game_height
 
     @staticmethod
@@ -52,12 +51,12 @@ class Settings:
         magnitude = math.sqrt(x ** 2 + y ** 2)
         return angle, magnitude
 
-    def is_hotkey(self, key, control) -> bool:
-        if control not in self.hotkeys:
+    def is_hotkey(self, key: int, control: Control, mouse: bool) -> bool:
+        if mouse:
+            controls = self.mouse_hotkeys
+        else:
+            controls = self.hotkeys
+        if control not in controls:
             return False
-        return self.hotkeys[control] == key
+        return controls[control] == key
 
-    def is_mouse_hotkey(self, mouse_key, control) -> bool:
-        if control not in self.mouse_hotkeys:
-            return False
-        return self.mouse_hotkeys[control] == mouse_key

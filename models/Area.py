@@ -2,7 +2,7 @@ import sys
 from enum import IntEnum
 
 import pygame
-from pygame import Surface
+from pygame import Surface, Mask
 from pygame.sprite import Group
 
 from models.Enemy import EnemyType, NormalEnemy, BossEnemy
@@ -37,8 +37,7 @@ class Area:
         self.scale = map_size // len(self.tiles)
         self.populate_tiles(self.tiles)
 
-        self.surface = self._draw(map_size)
-        self.mask = pygame.mask.from_surface(self.surface)
+        self.mask = self._get_mask(map_size)
 
         self.exit: ExitDoor | None = None
         self.players = Group()
@@ -138,13 +137,13 @@ class Area:
         empty_tiles = [(i, j) for i, row in enumerate(tiles) for j, tile in enumerate(row) if tile == TileType.EMPTY]
         return max(((a, b) for a in empty_tiles for b in empty_tiles if a < b), key=lambda x: distance_squared(*x))
 
-    def _draw(self, size: int) -> Surface:
+    def _get_mask(self, size: int) -> Mask:
         surface = Surface((size, size), pygame.SRCALPHA)
         for i, row in enumerate(self.tiles):
             for j, tile in enumerate(row):
                 if tile == TileType.WALL:
                     pygame.draw.rect(surface, (255, 255, 255), (i * self.scale, j * self.scale, self.scale, self.scale))
-        return surface
+        return pygame.mask.from_surface(surface)
 
     @staticmethod
     def flood_fill(holey_tiles: list[list[TileType]], i: int, j: int) -> int:

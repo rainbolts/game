@@ -53,6 +53,8 @@ class GameServer:
         except ConnectionResetError as e:
             print(e)
         finally:
+            if client.player:
+                client.player.kill()
             del self.clients[connection]
             connection.close()
 
