@@ -5,6 +5,7 @@ import threading
 from models.Direction import Direction
 from models.Player import Player
 from models.Settings import Settings, Control
+from systems.AudioSystem import AudioSystem
 from systems.ClientReceiverSystem import ClientReceiverSystem
 from systems.DrawSystem import DrawSystem
 
@@ -22,6 +23,7 @@ class GameClient:
         self.settings = Settings()
         self.server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.draw_system = DrawSystem(self.clock, self.settings)
+        self.audio_system = AudioSystem()
 
         self.receiver = ClientReceiverSystem(self.server)
 
@@ -54,6 +56,7 @@ class GameClient:
             offset = self.get_offset()
             self.handle_events(offset)
             self.draw_system.draw(self.receiver.area, offset)
+            self.audio_system.play()
             self.clock.tick(140)
 
         pygame.quit()
