@@ -11,7 +11,7 @@ class Player(Entity):
     def __init__(self, client_id: int | None, spawn: tuple[int, int]):
         super().__init__(spawn, 40, 40, (0, 255, 0))
         self.client_id = client_id
-        self.movement_speed: float = 3.0
+        self.movement_speed: float = 20.0
         self.attacks_per_second: float = 1.0
 
         self.last_attacked_time: int = 0
