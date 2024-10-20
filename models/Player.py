@@ -5,6 +5,7 @@ from pygame import Vector2
 
 from models.Direction import Direction
 from models.Entity import Entity
+from models.LootContainer import LootContainer
 
 
 class Player(Entity):
@@ -16,6 +17,8 @@ class Player(Entity):
 
         self.last_direction: Direction = Direction.DOWN
         self.last_attacked_time: int = 0
+
+        self.inventory = LootContainer(15, 10)
 
     def set_preferred_velocity(self, direction: Direction):
         go_left = Direction.LEFT in direction

@@ -26,7 +26,7 @@ class GameServer:
         self.clients: dict[socket, Client] = {}
 
         self.area_system = AreaSystem()
-        self.loot_system = LootSystem()
+        self.loot_system = LootSystem(self.area_system)
         self.movement_system = MovementSystem(self.area_system)
         self.skill_system = SkillSystem(self.area_system)
         self.damage_system = DamageSystem(self.area_system, self.loot_system)
@@ -89,6 +89,7 @@ class GameServer:
             self.movement_system.move()
             self.skill_system.use_skills()
             self.damage_system.apply_damage()
+            self.loot_system.check_collisions()
             self.broadcaster.send_updates()
 
             clock.tick(60)
