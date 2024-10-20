@@ -11,9 +11,10 @@ class Player(Entity):
     def __init__(self, client_id: int | None, spawn: tuple[int, int]):
         super().__init__(spawn, 40, 40, (0, 255, 0))
         self.client_id = client_id
-        self.movement_speed: float = 20.0
+        self.movement_speed: float = 3.0
         self.attacks_per_second: float = 1.0
 
+        self.last_direction: Direction = Direction.DOWN
         self.last_attacked_time: int = 0
 
     def set_preferred_velocity(self, direction: Direction):
@@ -52,4 +53,8 @@ class Player(Entity):
 
     @staticmethod
     def from_broadcast(data: dict[str, any]) -> 'Player':
-        return Player(int(data['id']), (int(data['x']), int(data['y'])))
+        result = Player(int(data['id']), (int(data['x']), int(data['y'])))
+        vx = float(data['vx'])
+        vy = float(data['vy'])
+        result._preferred_velocity = Vector2(vx, vy)
+        return result

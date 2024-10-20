@@ -31,14 +31,16 @@ class Area:
         self._spawn = None
         self._boss = None
 
-        self.map_size = 2000
+        self.map_grid_size = 40
+        self.map_render_size = 2000
 
-        self.tiles = self.generate_tiles(40)
-        self.scale = self.map_size // len(self.tiles)
+        self.tiles = self.generate_tiles()
+        self.scale = self.map_render_size // len(self.tiles)
         self.populate_tiles(self.tiles)
 
         self.mask = self._get_mask()
-        self.surface = None
+        self.floor_surface = None
+        self.wall_surface = None
 
         self.exit: ExitDoor | None = None
         self.players = Group()
@@ -54,23 +56,23 @@ class Area:
         unscaled_boss = self._boss
         return unscaled_boss[0] * self.scale, unscaled_boss[1] * self.scale
 
-    def generate_tiles(self, size: int) -> list[list[TileType]]:
-        tiles = [x[:] for x in [[TileType.EMPTY] * size] * size]
+    def generate_tiles(self) -> list[list[TileType]]:
+        tiles = [x[:] for x in [[TileType.EMPTY] * self.map_grid_size] * self.map_grid_size]
 
-        rng = range(size)
+        rng = range(self.map_grid_size)
         for i in rng:
-            if i == 0 or i == size - 1:
+            if i == 0 or i == self.map_grid_size - 1:
                 continue
             for j in rng:
-                if j == 0 or j == size - 1 or self.random.randint(0, 99) < 40:
+                if j == 0 or j == self.map_grid_size - 1 or self.random.randint(0, 99) < 40:  # 40% chance of wall
                     tiles[i][j] = TileType.WALL
 
         for _ in range(10):
-            new_tiles = [[TileType.EMPTY] * size for _ in rng]
+            new_tiles = [[TileType.EMPTY] * self.map_grid_size for _ in rng]
 
             for i in rng:
                 for j in rng:
-                    if j == 0 or j == size - 1 or i == 0 or i == size - 1:
+                    if j == 0 or j == self.map_grid_size - 1 or i == 0 or i == self.map_grid_size - 1:
                         new_tiles[i][j] = TileType.WALL
                     else:
                         if (tiles[i - 1][j - 1] + tiles[i - 1][j] + tiles[i - 1][j + 1] +
@@ -139,7 +141,7 @@ class Area:
         return max(((a, b) for a in empty_tiles for b in empty_tiles if a < b), key=lambda x: distance_squared(*x))
 
     def _get_mask(self) -> Mask:
-        surface = Surface((self.map_size, self.map_size), pygame.SRCALPHA)
+        surface = Surface((self.map_render_size, self.map_render_size), pygame.SRCALPHA)
         for i, row in enumerate(self.tiles):
             for j, tile in enumerate(row):
                 if tile == TileType.WALL:
@@ -194,8 +196,18 @@ class Area:
         else:
             area = Area(update['seed'])
 
-        area.players.empty()
-        area.players.add([Player.from_broadcast(player) for player in update['players']])
+        for player_update in update['players']:
+            player_id = int(player_update['id'])
+            player = next((p for p in area.players if p.client_id == player_id), None)
+            if player:
+                player.move_absolute(int(player_update['x']), int(player_update['y']))
+                player._preferred_velocity = pygame.Vector2(float(player_update['vx']), float(player_update['vy']))
+            else:
+                area.players.add(Player.from_broadcast(player_update))
+
+        for player in area.players:
+            if player.client_id not in [int(player_update['id']) for player_update in update['players']]:
+                player.kill()
 
         area.projectiles.empty()
         area.projectiles.add([Projectile.from_broadcast(projectile) for projectile in update['projectiles']])

@@ -62,7 +62,9 @@ class Entity(Sprite, ABC):
     def to_broadcast(self) -> dict[str, Any]:
         return {
             'x': int(round(self._precise_location[0])),
-            'y': int(round(self._precise_location[1]))
+            'y': int(round(self._precise_location[1])),
+            'vx': self._preferred_velocity.x,
+            'vy': self._preferred_velocity.y
         }
 
     @staticmethod
