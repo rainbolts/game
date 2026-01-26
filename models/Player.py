@@ -18,7 +18,8 @@ class Player(Entity):
         self.last_direction: Direction = Direction.DOWN
         self.last_attacked_time: int = 0
 
-        self.inventory = LootContainer(15, 10)
+        self.inventory = LootContainer(15, 1)
+        self.show_inventory = False
 
     def set_preferred_velocity(self, direction: Direction):
         go_left = Direction.LEFT in direction
@@ -51,13 +52,19 @@ class Player(Entity):
 
     def to_broadcast(self) -> dict[str, Any]:
         result = super().to_broadcast()
-        result['id'] = self.client_id
+        result['client_id'] = self.client_id
+        result['inventory'] = self.inventory.to_broadcast()
         return result
 
+    def merge_broadcast(self, data: dict[str, Any]):
+        super().merge_broadcast(data)
+        self.inventory.merge_broadcast(data['inventory'])
+
     @staticmethod
-    def from_broadcast(data: dict[str, any]) -> 'Player':
-        result = Player(int(data['id']), (int(data['x']), int(data['y'])))
+    def from_broadcast(data: dict[str, Any]) -> 'Player':
+        result = Player(int(data['client_id']), (int(data['x']), int(data['y'])))
         vx = float(data['vx'])
         vy = float(data['vy'])
         result._preferred_velocity = Vector2(vx, vy)
+        result.inventory = LootContainer.from_broadcast(data['inventory'])
         return result

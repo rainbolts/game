@@ -1,12 +1,11 @@
 import json
-from socket import socket
+import socket
 
 from models.Area import Area
 
 
 class ClientReceiverSystem:
-    def __init__(self,
-                 server: socket):
+    def __init__(self, server: socket.socket):
         self.server = server
         self.area: Area | None = None
         self.client_id: int | None = None

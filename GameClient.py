@@ -52,6 +52,7 @@ class GameClient:
                 for player in self.receiver.area.players:
                     if self.receiver.client_id == player.client_id:
                         self.player = player
+                        self.draw_system.player = player
 
             offset = self.get_offset()
             self.handle_events(offset)
@@ -85,6 +86,9 @@ class GameClient:
                     self.server.sendall(f'move:{Direction.LEFT.value}\n'.encode())
                 elif self.settings.is_hotkey(key, Control.MOVE_RIGHT, is_mouse):
                     self.server.sendall(f'move:{Direction.RIGHT.value}\n'.encode())
+                elif self.settings.is_hotkey(key, Control.INVENTORY, is_mouse):
+                    if self.player:
+                        self.player.show_inventory = not self.player.show_inventory
                 elif self.settings.is_hotkey(key, Control.SKILL1, is_mouse):
                     self.attacking = True
                     self.attack(offset)

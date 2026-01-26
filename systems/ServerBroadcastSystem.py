@@ -2,7 +2,7 @@ import json
 from socket import socket
 
 from models.Client import Client
-from systems import AreaSystem
+from systems.AreaSystem import AreaSystem
 
 
 class ServerBroadcastSystem:

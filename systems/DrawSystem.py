@@ -2,12 +2,13 @@ import math
 import random
 
 import pygame
+from pygame import Surface
 
 from models.Area import Area, TileType
 from models.Direction import Direction
 from models.Enemy import Enemy
 from models.ExitDoor import ExitDoor
-from models.Loot import LootType, Loot
+from models.Loot import Loot
 from models.Player import Player
 from models.Projectile import Projectile
 from models.Settings import Settings
@@ -15,8 +16,9 @@ from models.Settings import Settings
 
 class DrawSystem:
     def __init__(self, clock: pygame.time.Clock, settings: Settings):
-        self.screen = pygame.display.set_mode((settings.game_width, settings.game_height))
+        self.screen = pygame.display.set_mode((settings.game_width, settings.game_height), pygame.SRCALPHA)
         self.clock = clock
+        self.player: Player | None = None
         self.draw_tiles = {
             'player': {
                 'sprite_sheet': pygame.image.load('images/player_sprite_sheet.png').convert(),
@@ -112,6 +114,8 @@ class DrawSystem:
             if area.exit:
                 self.draw_exit(area.exit, offset)
 
+        self.draw_inventory()
+
         self.draw_fps()
         pygame.display.flip()
 
@@ -183,7 +187,7 @@ class DrawSystem:
                     rand_int = random.randint(0, 3)
                     image = pygame.transform.rotate(image, 90 * rand_int)
 
-                    darkness_level = random.randint(0, 40)
+                    darkness_level = random.randint(0, 0)
                     overlay = pygame.Surface((area.scale, area.scale), pygame.SRCALPHA)
                     overlay.fill((0, 0, 0, darkness_level))
 
@@ -254,3 +258,33 @@ class DrawSystem:
         font = pygame.font.SysFont('Arial', 16)
         text_to_show = font.render(str(int(fps)), False, (150, 150, 255))
         self.screen.blit(text_to_show, (0, 0))
+
+    def draw_inventory(self):
+        if not self.player or not self.player.show_inventory:
+            return
+
+        for row in range(self.player.inventory.height):
+            for col in range(self.player.inventory.width):
+                x = col * 52
+                y = row * 52
+
+                # Draw the inventory in the middle of the screen
+                inventory_width = self.player.inventory.width * 52
+                screen_width = self.screen.get_width()
+                inventory_height = self.player.inventory.height * 52
+                screen_height = self.screen.get_height()
+                inventory_x = screen_width // 2 - inventory_width // 2
+                inventory_y = screen_height // 2 - inventory_height // 2
+
+                rect = (inventory_x + x, inventory_y + y, 50, 50)
+                self.draw_rect_alpha(self.screen, (0, 0, 0, 100), rect)
+
+                if (col, row) in self.player.inventory.loot:
+                    loot = self.player.inventory.loot[(col, row)]
+                    self.screen.blit(loot.image, (inventory_x + x, inventory_y + y))
+
+    @staticmethod
+    def draw_rect_alpha(surface: Surface, color, rect):
+        shape_surf = Surface(pygame.Rect(rect).size, pygame.SRCALPHA)
+        pygame.draw.rect(shape_surf, color, shape_surf.get_rect())
+        surface.blit(shape_surf, rect)

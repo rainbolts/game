@@ -1,6 +1,6 @@
 from unittest import TestCase
 
-from models.Area import Area
+from models.Area import Area, TileType
 
 
 class TestArea(TestCase):
@@ -10,11 +10,13 @@ class TestArea(TestCase):
                  [1, 0, 1, 0, 1],
                  [1, 1, 1, 0, 1],
                  [1, 1, 1, 1, 1]]
+        tiles = [[TileType(x) for x in row] for row in tiles]
         expected = [[1, 1, 1, 1, 1],
                     [1, 1, 1, 0, 1],
                     [1, 1, 1, 0, 1],
                     [1, 1, 1, 0, 1],
                     [1, 1, 1, 1, 1]]
+        expected = [[TileType(x) for x in row] for row in expected]
         actual = Area(5).find_largest_empty(tiles)
         self.assertEqual(expected, actual)
 

@@ -67,6 +67,10 @@ class Entity(Sprite, ABC):
             'vy': self._preferred_velocity.y
         }
 
+    def merge_broadcast(self, data: dict[str, Any]):
+        self.move_absolute(int(data['x']), int(data['y']))
+        self._preferred_velocity = Vector2(float(data['vx']), float(data['vy']))
+
     @staticmethod
     def from_broadcast(data: dict[str, Any]) -> 'Entity':
         raise NotImplementedError('This method must be overridden in a subclass.')

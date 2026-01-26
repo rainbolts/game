@@ -7,7 +7,7 @@ from pygame.sprite import Group
 
 from models.Enemy import EnemyType, NormalEnemy, BossEnemy
 from models.ExitDoor import ExitDoor
-from models.Loot import LootType, RingLoot
+from models.Loot import Loot
 from models.Player import Player
 from models.Projectile import Projectile
 
@@ -197,16 +197,15 @@ class Area:
             area = Area(update['seed'])
 
         for player_update in update['players']:
-            player_id = int(player_update['id'])
-            player = next((p for p in area.players if p.client_id == player_id), None)
+            client_id = int(player_update['client_id'])
+            player = next((p for p in area.players if p.client_id == client_id), None)
             if player:
-                player.move_absolute(int(player_update['x']), int(player_update['y']))
-                player._preferred_velocity = pygame.Vector2(float(player_update['vx']), float(player_update['vy']))
+                player.merge_broadcast(player_update)
             else:
                 area.players.add(Player.from_broadcast(player_update))
 
         for player in area.players:
-            if player.client_id not in [int(player_update['id']) for player_update in update['players']]:
+            if player.client_id not in [int(player_update['client_id']) for player_update in update['players']]:
                 player.kill()
 
         area.projectiles.empty()
@@ -224,11 +223,8 @@ class Area:
 
         area.loots.empty()
         for loot_update in update['loot']:
-            loot_type = int(loot_update['type'])
-            if loot_type == LootType.RING:
-                area.loots.add(RingLoot.from_broadcast(loot_update))
-            else:
-                raise ValueError(f'Unknown loot type: {loot_type}')
+            loot = Loot.from_broadcast(loot_update)
+            area.loots.add(loot)
 
         if area.exit:
             area.exit.kill()

@@ -1,0 +1,7 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="GameClientAndServer" type="CompoundRunConfigurationType">
+    <toRun name="GameClient" type="PythonConfigurationType" />
+    <toRun name="GameServer" type="PythonConfigurationType" />
+    <method v="2" />
+  </configuration>
+</component>

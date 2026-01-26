@@ -7,7 +7,7 @@ from models.Player import Player
 
 
 class Control(IntEnum):
-    MENU = auto()
+    INVENTORY = auto()
     MOVE_LEFT = auto()
     MOVE_RIGHT = auto()
     MOVE_UP = auto()
@@ -20,7 +20,7 @@ class Settings:
     def __init__(self) -> None:
         self.game_width, self.game_height = self.get_game_size()
         self.hotkeys = {
-            Control.MENU: pygame.K_ESCAPE,
+            Control.INVENTORY: pygame.K_i,
             Control.MOVE_LEFT: pygame.K_a,
             Control.MOVE_RIGHT: pygame.K_d,
             Control.MOVE_UP: pygame.K_w,

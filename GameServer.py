@@ -23,7 +23,7 @@ class GameServer:
         self.host = '127.0.0.1'
         self.port = 8888
         self.running = False
-        self.clients: dict[socket, Client] = {}
+        self.clients: dict[socket.socket, Client] = {}
 
         self.area_system = AreaSystem()
         self.loot_system = LootSystem(self.area_system)
@@ -38,7 +38,7 @@ class GameServer:
         threading.Thread(target=self.server_thread, daemon=True).start()
         self.game_thread()
 
-    def client_thread(self, connection: socket, address: str) -> None:
+    def client_thread(self, connection: socket.socket, address: str) -> None:
         """
         Listens for client updates until the client disconnects.
         """
