@@ -88,7 +88,7 @@ class GameClient:
                     self.server.sendall(f'move:{Direction.RIGHT.value}\n'.encode())
                 elif self.settings.is_hotkey(key, Control.INVENTORY, is_mouse):
                     if self.player:
-                        self.player.show_inventory = not self.player.show_inventory
+                        self.player.show_character_panel = not self.player.show_character_panel
                 elif self.settings.is_hotkey(key, Control.SKILL1, is_mouse):
                     self.attacking = True
                     self.attack(offset)

@@ -114,7 +114,7 @@ class DrawSystem:
             if area.exit:
                 self.draw_exit(area.exit, offset)
 
-        self.draw_inventory()
+        self.draw_character_panel()
 
         self.draw_fps()
         pygame.display.flip()
@@ -259,32 +259,69 @@ class DrawSystem:
         text_to_show = font.render(str(int(fps)), False, (150, 150, 255))
         self.screen.blit(text_to_show, (0, 0))
 
-    def draw_inventory(self):
-        if not self.player or not self.player.show_inventory:
+    def draw_character_panel(self):
+        if not self.player or not self.player.show_character_panel:
             return
 
+        screen_width, screen_height = self.screen.get_size()
+
+        # Character panel
+        panel_w = int(screen_width * 0.3)
+        panel_h = screen_height
+        panel_x = screen_width - panel_w
+        panel_y = 0
+        self._draw_rect_alpha(self.screen, (40, 40, 40, 230), (panel_x, panel_y, panel_w, panel_h))
+
+        # Gear sub-panel
+        self.draw_character_gear()
+
+        # Inventory sub-panel
+        sub_h = int(panel_h * 0.5)
+        sub_x = panel_x
+        sub_y = panel_y + panel_h - sub_h
+
+        pad_x = int(panel_w * 0.1)
+        pad_y = int(sub_h * 0.1)
+        inner_x = sub_x + pad_x
+        inner_y = sub_y + pad_y
+        inner_w = panel_w - (2 * pad_x)
+        inner_h = sub_h - (2 * pad_y)
+
+        self._draw_rect_alpha(self.screen, (30, 30, 30, 200), (inner_x, inner_y, inner_w, inner_h))
+        self.draw_character_inventory(inner_w, inner_x, inner_y)
+
+    def draw_character_gear(self) -> None:
+        # TODO: Implement character gear drawing
+        pass
+
+    def draw_character_inventory(self, panel_width: int, panel_x: int, panel_y: int) -> None:
+        gap = 3
+
+        cols = max(1, self.player.inventory.width)
+        space_for_cells = panel_width - gap * (cols - 1)
+        cell_size = max(1, space_for_cells // cols)
+
+        screen_rect = self.screen.get_rect()
+
+        # Draw the grid inside the inner area; do not blit images that are off-screen
         for row in range(self.player.inventory.height):
-            for col in range(self.player.inventory.width):
-                x = col * 52
-                y = row * 52
+            for col in range(cols):
+                cell_x = panel_x + col * (cell_size + gap)
+                cell_y = panel_y + row * (cell_size + gap)
+                rect = (cell_x, cell_y, cell_size, cell_size)
 
-                # Draw the inventory in the middle of the screen
-                inventory_width = self.player.inventory.width * 52
-                screen_width = self.screen.get_width()
-                inventory_height = self.player.inventory.height * 52
-                screen_height = self.screen.get_height()
-                inventory_x = screen_width // 2 - inventory_width // 2
-                inventory_y = screen_height // 2 - inventory_height // 2
+                # Draw the square background (black with alpha)
+                self._draw_rect_alpha(self.screen, (0, 0, 0, 180), rect)
 
-                rect = (inventory_x + x, inventory_y + y, 50, 50)
-                self.draw_rect_alpha(self.screen, (0, 0, 0, 100), rect)
-
+                # Blit loot image if present and at least partially on-screen
                 if (col, row) in self.player.inventory.loot:
                     loot = self.player.inventory.loot[(col, row)]
-                    self.screen.blit(loot.image, (inventory_x + x, inventory_y + y))
+                    if pygame.Rect(rect).colliderect(screen_rect):
+                        self.screen.blit(loot.image, (cell_x, cell_y))
 
     @staticmethod
-    def draw_rect_alpha(surface: Surface, color, rect):
+    def _draw_rect_alpha(surface: Surface, color, rect):
         shape_surf = Surface(pygame.Rect(rect).size, pygame.SRCALPHA)
         pygame.draw.rect(shape_surf, color, shape_surf.get_rect())
         surface.blit(shape_surf, rect)
+
