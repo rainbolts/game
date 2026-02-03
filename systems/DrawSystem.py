@@ -11,14 +11,16 @@ from models.ExitDoor import ExitDoor
 from models.Loot import Loot
 from models.Player import Player
 from models.Projectile import Projectile
-from models.Settings import Settings
+from systems.InputSystem import InputSystem, Control
 
 
 class DrawSystem:
-    def __init__(self, clock: pygame.time.Clock, settings: Settings):
-        self.screen = pygame.display.set_mode((settings.game_width, settings.game_height), pygame.SRCALPHA)
+    def __init__(self, clock: pygame.time.Clock, input_system: InputSystem) -> None:
+        self.input_system = input_system
+        self.screen = pygame.display.set_mode((self.input_system.game_width, self.input_system.game_height), pygame.SRCALPHA)
         self.clock = clock
         self.player: Player | None = None
+        self.show_character_panel = False
         self.draw_tiles = {
             'player': {
                 'sprite_sheet': pygame.image.load('images/player_sprite_sheet.png').convert(),
@@ -68,21 +70,6 @@ class DrawSystem:
                 pygame.image.load('images/projectile2.png').convert_alpha(),
                 pygame.image.load('images/projectile3.png').convert_alpha(),
             ],
-            # 'enemy': {
-            #     'up': [pygame.image.load('images/enemy_up1.png').convert()],
-            #     'down': [pygame.image.load('images/enemy_down1.png').convert()],
-            #     'left': [pygame.image.load('images/enemy_left1.png').convert()],
-            #     # right is left but mirrored
-            # },
-            # 'loot': {
-            #     'floor': {
-            #         LootType.RING: pygame.image.load('images/ring_floor.png').convert(),
-            #     },
-            #     'inventory': {
-            #         LootType.RING: pygame.image.load('images/ring_inventory.png').convert(),
-            #     }
-            # },
-            # 'exit': pygame.image.load('images/exit.png').convert(),
             'wall': [
                 pygame.image.load('images/wall1.png').convert(),
                 pygame.image.load('images/wall2.png').convert(),
@@ -100,9 +87,18 @@ class DrawSystem:
                 pygame.image.load('images/floor_theme_2/floor6.png').convert(),
             ],
         }
+        self.input_system.subscribe(Control.CHARACTER_PANEL, self.toggle_character_panel)
 
-    def draw(self, area: Area, offset: tuple[int, int]):
+    def toggle_character_panel(self) -> None:
+        self.show_character_panel = not self.show_character_panel
+
+    def draw(self, area: Area):
         self.screen.fill((0, 0, 0))
+        if self.player is None:
+            pygame.display.flip()
+            return
+
+        offset = self.input_system.get_offset(self.player)
 
         if area is not None:
             self.draw_area(area, offset)
@@ -260,7 +256,7 @@ class DrawSystem:
         self.screen.blit(text_to_show, (0, 0))
 
     def draw_character_panel(self):
-        if not self.player or not self.player.show_character_panel:
+        if not self.show_character_panel:
             return
 
         screen_width, screen_height = self.screen.get_size()

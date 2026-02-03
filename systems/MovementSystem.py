@@ -5,7 +5,6 @@ from models.Behaviors import CollisionBehavior
 from models.Direction import Direction
 from models.Entity import Entity
 from models.Player import Player
-from models.Projectile import Projectile
 from systems.AreaSystem import AreaSystem
 
 
