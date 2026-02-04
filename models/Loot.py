@@ -1,11 +1,49 @@
-from enum import IntEnum
+from enum import IntEnum, auto
 from typing import Any
 
 from models.Entity import Entity
 
 
 class LootType(IntEnum):
-    RING = 0
+    SHOULDER = auto()
+    NECKLACE = auto()
+    LANTERN = auto()
+    CAPE = auto()
+    RING = auto()
+    GLOVES = auto()
+    BODY = auto()
+    HELMET = auto()
+    WEAPON = auto()
+    SHIELD = auto()
+
+
+class GearSlot(IntEnum):
+    FEET = auto()
+    POTION1 = auto()
+    POTION2 = auto()
+    LEGS = auto()
+    CHARM1 = auto()
+    CHARM2 = auto()
+    CHARM3 = auto()
+    CHARM4 = auto()
+    BELT = auto()
+    SHOULDER = auto()
+    NECKLACE = auto()
+    LANTERN = auto()
+    CAPE = auto()
+    FINGER1 = auto()
+    FINGER2 = auto()
+    FINGER3 = auto()
+    FINGER4 = auto()
+    FINGER5 = auto()
+    FINGER6 = auto()
+    FINGER7 = auto()
+    FINGER8 = auto()
+    HANDS = auto()
+    BODY = auto()
+    HEAD = auto()
+    MAIN_HAND = auto()
+    OFF_HAND = auto()
 
 
 class Loot(Entity):

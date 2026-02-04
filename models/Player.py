@@ -18,7 +18,7 @@ class Player(Entity):
         self.last_direction: Direction = Direction.DOWN
         self.last_attacked_time: int = 0
 
-        self.inventory = LootContainer(10, 15)
+        self.inventory = LootContainer(10, 10)
         self.show_character_panel = False
 
     def set_preferred_velocity(self, direction: Direction):

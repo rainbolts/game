@@ -8,7 +8,7 @@ from models.Area import Area, TileType
 from models.Direction import Direction
 from models.Enemy import Enemy
 from models.ExitDoor import ExitDoor
-from models.Loot import Loot
+from models.Loot import Loot, GearSlot
 from models.Player import Player
 from models.Projectile import Projectile
 from systems.InputSystem import InputSystem, Control
@@ -266,29 +266,89 @@ class DrawSystem:
         panel_h = screen_height
         panel_x = screen_width - panel_w
         panel_y = 0
-        self._draw_rect_alpha(self.screen, (40, 40, 40, 230), (panel_x, panel_y, panel_w, panel_h))
+        self._draw_rect_alpha((40, 40, 40, 230), (panel_x, panel_y, panel_w, panel_h))
 
         # Gear sub-panel
-        self.draw_character_gear()
-
-        # Inventory sub-panel
         sub_h = int(panel_h * 0.5)
-        sub_x = panel_x
-        sub_y = panel_y + panel_h - sub_h
 
         pad_x = int(panel_w * 0.1)
         pad_y = int(sub_h * 0.1)
-        inner_x = sub_x + pad_x
-        inner_y = sub_y + pad_y
+        inner_x = panel_x + pad_x
+        inner_y = panel_y + pad_y
         inner_w = panel_w - (2 * pad_x)
         inner_h = sub_h - (2 * pad_y)
 
-        self._draw_rect_alpha(self.screen, (30, 30, 30, 200), (inner_x, inner_y, inner_w, inner_h))
+        self._draw_rect_alpha((30, 30, 30, 200), (inner_x, inner_y, inner_w, inner_h))
+        self.draw_character_gear(inner_w, inner_x, inner_y)
+
+        # Inventory sub-panel
+        inner_y = panel_y + panel_h - sub_h + pad_y
+
+        self._draw_rect_alpha((30, 30, 30, 200), (inner_x, inner_y, inner_w, inner_h))
         self.draw_character_inventory(inner_w, inner_x, inner_y)
 
-    def draw_character_gear(self) -> None:
-        # TODO: Implement character gear drawing
-        pass
+    def draw_loot_slot(self, x: int, y: int, width: int, height: int) -> None:
+        slot_color = (0, 0, 0, 180)
+        self._draw_rect_alpha(slot_color, (x, y, width, height))
+
+    def draw_character_gear(self, panel_width: int, panel_x: int, panel_y: int) -> None:
+        cols = 6
+        rows = 12
+        gap = 2
+
+        # Compute max square cell size that fits inside the panel, accounting for gaps
+        cell_size_w = (panel_width - gap * (cols - 1)) // cols
+        cell_size_h = (panel_width - gap * (rows - 1)) // rows
+        cell_size = min(cell_size_w, cell_size_h)
+
+        # Compute horizontal offset to center the grid
+        total_grid_width = cell_size * cols + gap * (cols - 1)
+        x_offset = panel_x + (panel_width - total_grid_width) // 2
+
+        def cell_to_px(col: int, row: int) -> tuple[int, int]:
+            # col, row are 1-based
+            x = x_offset + (col - 1) * (cell_size + gap)
+            y = panel_y + (row - 1) * (cell_size + gap)
+            return x, y
+
+        layout = {
+            # slot: (x, y, cell width, cell height)
+            GearSlot.CAPE: (1, 1, 2, 3),
+            GearSlot.LANTERN: (5, 1, 1, 1),
+            GearSlot.HEAD: (3, 1, 2, 2),
+            GearSlot.NECKLACE: (5, 2, 1, 1),
+            GearSlot.BODY: (3, 3, 2, 3),
+            GearSlot.SHOULDER: (5, 3, 2, 1),
+            GearSlot.MAIN_HAND: (1, 4, 2, 3),
+            GearSlot.OFF_HAND: (5, 4, 2, 3),
+            GearSlot.BELT: (3, 6, 2, 1),
+            GearSlot.HANDS: (1, 7, 2, 2),
+            GearSlot.POTION1: (5, 7, 1, 2),
+            GearSlot.POTION2: (6, 7, 1, 2),
+            GearSlot.LEGS: (3, 7, 2, 3),
+            GearSlot.FINGER1: (1, 9, 1, 1),
+            GearSlot.FINGER2: (2, 9, 1, 1),
+            GearSlot.FINGER3: (1, 10, 1, 1),
+            GearSlot.FINGER4: (2, 10, 1, 1),
+            GearSlot.FINGER5: (5, 9, 1, 1),
+            GearSlot.FINGER6: (6, 9, 1, 1),
+            GearSlot.FINGER7: (5, 10, 1, 1),
+            GearSlot.FINGER8: (6, 10, 1, 1),
+            GearSlot.FEET: (3, 10, 2, 2),
+            GearSlot.CHARM1: (1, 11, 1, 1),
+            GearSlot.CHARM2: (2, 11, 1, 1),
+            GearSlot.CHARM3: (5, 11, 1, 1),
+            GearSlot.CHARM4: (6, 11, 1, 1),
+        }
+
+        for col, row, w, h in layout.values():
+            lx, ly = cell_to_px(col, row)
+            self.draw_loot_slot(
+                lx,
+                ly,
+                cell_size * w + (w - 1) * gap,
+                cell_size * h + (h - 1) * gap,
+            )
 
     def draw_character_inventory(self, panel_width: int, panel_x: int, panel_y: int) -> None:
         gap = 3
@@ -297,27 +357,31 @@ class DrawSystem:
         space_for_cells = panel_width - gap * (cols - 1)
         cell_size = max(1, space_for_cells // cols)
 
-        screen_rect = self.screen.get_rect()
-
-        # Draw the grid inside the inner area; do not blit images that are off-screen
+        # Draw cells
         for row in range(self.player.inventory.height):
             for col in range(cols):
                 cell_x = panel_x + col * (cell_size + gap)
                 cell_y = panel_y + row * (cell_size + gap)
                 rect = (cell_x, cell_y, cell_size, cell_size)
 
-                # Draw the square background (black with alpha)
-                self._draw_rect_alpha(self.screen, (0, 0, 0, 180), rect)
+                self._draw_rect_alpha((0, 0, 0, 180), rect)
 
-                # Blit loot image if present and at least partially on-screen
-                if (col, row) in self.player.inventory.loot:
-                    loot = self.player.inventory.loot[(col, row)]
-                    if pygame.Rect(rect).colliderect(screen_rect):
-                        self.screen.blit(loot.image, (cell_x, cell_y))
+        for (col, row), loot in self.player.inventory.loot.items():
+            cell_x = panel_x + col * (cell_size + gap)
+            cell_y = panel_y + row * (cell_size + gap)
 
-    @staticmethod
-    def _draw_rect_alpha(surface: Surface, color, rect):
+            loot_px_w = loot.inventory_width * cell_size + (loot.inventory_width - 1) * gap
+            loot_px_h = loot.inventory_height * cell_size + (loot.inventory_height - 1) * gap
+
+            scaled = pygame.transform.scale(
+                loot.image,
+                (loot_px_w, loot_px_h),
+            )
+
+            self.screen.blit(scaled, (cell_x, cell_y))
+
+    def _draw_rect_alpha(self, color, rect):
         shape_surf = Surface(pygame.Rect(rect).size, pygame.SRCALPHA)
         pygame.draw.rect(shape_surf, color, shape_surf.get_rect())
-        surface.blit(shape_surf, rect)
+        self.screen.blit(shape_surf, rect)
 
