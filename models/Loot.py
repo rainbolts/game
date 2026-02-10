@@ -47,8 +47,10 @@ class GearSlot(IntEnum):
 
 
 class Loot(Entity):
-    def __init__(self, spawn: tuple[int, int], inventory_width: int, inventory_height: int):
+    def __init__(self, server_id: int, loot_id: int, spawn: tuple[int, int], inventory_width: int, inventory_height: int):
         super().__init__(spawn, 40, 40, (0, 255, 255), 0)
+        self.server_id = server_id
+        self.loot_id = loot_id
         self.inventory_width = inventory_width
         self.inventory_height = inventory_height
 
@@ -62,14 +64,16 @@ class Loot(Entity):
 
 
 class RingLoot(Loot):
-    def __init__(self, spawn: tuple[int, int]):
-        super().__init__(spawn, 1, 1)
+    def __init__(self, server_id: int, loot_id: int, spawn: tuple[int, int]):
+        super().__init__(server_id, loot_id, spawn, 1, 1)
 
     def to_broadcast(self) -> dict[str, Any]:
         result = super().to_broadcast()
+        result['server_id'] = self.server_id
+        result['loot_id'] = self.loot_id
         result['type'] = LootType.RING
         return result
 
     @staticmethod
     def from_broadcast(data: dict) -> 'RingLoot':
-        return RingLoot((int(data['x']), int(data['y'])))
+        return RingLoot(int(data['server_id']), int(data['loot_id']), (int(data['x']), int(data['y'])))

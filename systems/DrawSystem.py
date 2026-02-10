@@ -12,15 +12,16 @@ from models.Loot import Loot, GearSlot
 from models.Player import Player
 from models.Projectile import Projectile
 from systems.InputSystem import InputSystem, Control
+from systems.InteractableSystem import InteractableSystem, Interactable, ScreenLayer
 
 
 class DrawSystem:
-    def __init__(self, clock: pygame.time.Clock, input_system: InputSystem) -> None:
+    def __init__(self, clock: pygame.time.Clock, input_system: InputSystem, interactable_system: InteractableSystem) -> None:
         self.input_system = input_system
+        self.interactable_system = interactable_system
         self.screen = pygame.display.set_mode((self.input_system.game_width, self.input_system.game_height), pygame.SRCALPHA)
         self.clock = clock
         self.player: Player | None = None
-        self.show_character_panel = False
         self.draw_tiles = {
             'player': {
                 'sprite_sheet': pygame.image.load('images/player_sprite_sheet.png').convert(),
@@ -89,11 +90,14 @@ class DrawSystem:
         }
         self.input_system.subscribe(Control.CHARACTER_PANEL, self.toggle_character_panel)
 
-    def toggle_character_panel(self) -> None:
-        self.show_character_panel = not self.show_character_panel
+    def toggle_character_panel(self, _) -> None:
+        if not self.player:
+            return
+        self.player.show_character_panel = not self.player.show_character_panel
 
     def draw(self, area: Area):
         self.screen.fill((0, 0, 0))
+        self.interactable_system.reset()
         if self.player is None:
             pygame.display.flip()
             return
@@ -112,8 +116,15 @@ class DrawSystem:
 
         self.draw_character_panel()
 
+        self.draw_cursor_loot()
+
         self.draw_fps()
         pygame.display.flip()
+
+    def draw_interactable(self, surface: Surface, location: tuple[int, int], layer: ScreenLayer, obj: object):
+        interactable = Interactable(layer, surface.get_rect(topleft=location), obj)
+        self.screen.blit(surface, interactable.hitbox)
+        self.interactable_system.add_interactable(interactable)
 
     def draw_players(self, players: list[Player], offset: tuple[int, int]):
         for player in players:
@@ -132,8 +143,9 @@ class DrawSystem:
 
             image = sprite_sheet.subsurface(pygame.Rect(top_left[0], top_left[1], width, height))
             image = pygame.transform.scale(image, (50, 50))
-            entity_location = player.get_pixel_location()
-            self.screen.blit(image, (entity_location[0] + offset[0], entity_location[1] + offset[1]))
+            location = player.get_pixel_location()
+            offset_location = (location[0] + offset[0], location[1] + offset[1])
+            self.draw_interactable(image, offset_location, ScreenLayer.ABOVE_GROUND, player)
 
     def draw_projectiles(self, projectiles: list[Projectile], offset: tuple[int, int]):
         for projectile in projectiles:
@@ -145,23 +157,26 @@ class DrawSystem:
             angle = math.atan2(vy, vx) * 180 / math.pi - 90  # Images point up but 0 degrees is right
             rotated_image = pygame.transform.rotate(image, angle)
 
-            entity_location = projectile.get_pixel_location()
-
-            self.screen.blit(rotated_image, (entity_location[0] + offset[0], entity_location[1] + offset[1]))
+            location = projectile.get_pixel_location()
+            offset_location = (location[0] + offset[0], location[1] + offset[1])
+            self.screen.blit(rotated_image, offset_location)
 
     def draw_enemies(self, enemies: list[Enemy], offset: tuple[int, int]):
         for enemy in enemies:
-            entity_location = enemy.get_pixel_location()
-            self.screen.blit(enemy.image, (entity_location[0] + offset[0], entity_location[1] + offset[1]))
+            location = enemy.get_pixel_location()
+            offset_location = (location[0] + offset[0], location[1] + offset[1])
+            self.draw_interactable(enemy.image, offset_location, ScreenLayer.ABOVE_GROUND, enemy)
 
     def draw_loots(self, loots: list[Loot], offset: tuple[int, int]):
         for loot in loots:
-            entity_location = loot.get_pixel_location()
-            self.screen.blit(loot.image, (entity_location[0] + offset[0], entity_location[1] + offset[1]))
+            location = loot.get_pixel_location()
+            offset_location = (location[0] + offset[0], location[1] + offset[1])
+            self.draw_interactable(loot.image, offset_location, ScreenLayer.ON_GROUND, loot)
 
     def draw_exit(self, exit: ExitDoor, offset: tuple[int, int]):
-        entity_location = exit.get_pixel_location()
-        self.screen.blit(exit.image, (entity_location[0] + offset[0], entity_location[1] + offset[1]))
+        location = exit.get_pixel_location()
+        offset_location = (location[0] + offset[0], location[1] + offset[1])
+        self.draw_interactable(exit.image, offset_location, ScreenLayer.ON_GROUND, exit)
 
     def draw_area(self, area: Area, offset: tuple[int, int]):
         self.draw_floor(area, offset)
@@ -256,7 +271,7 @@ class DrawSystem:
         self.screen.blit(text_to_show, (0, 0))
 
     def draw_character_panel(self):
-        if not self.show_character_panel:
+        if not self.player.show_character_panel:
             return
 
         screen_width, screen_height = self.screen.get_size()
@@ -269,46 +284,48 @@ class DrawSystem:
         self._draw_rect_alpha((40, 40, 40, 230), (panel_x, panel_y, panel_w, panel_h))
 
         # Gear sub-panel
-        sub_h = int(panel_h * 0.5)
+        common_pad_x = int(panel_w * 0.1)
+        common_pad_y = int(panel_h * 0.05)
+        common_inner_w = panel_w - (2 * common_pad_x)
+        common_inner_x = panel_x + common_pad_x
 
-        pad_x = int(panel_w * 0.1)
-        pad_y = int(sub_h * 0.1)
-        inner_x = panel_x + pad_x
-        inner_y = panel_y + pad_y
-        inner_w = panel_w - (2 * pad_x)
-        inner_h = sub_h - (2 * pad_y)
+        gear_sub_h = int(panel_h * 0.7)
+        gear_inner_y = panel_y + common_pad_y
+        gear_inner_h = gear_sub_h - (2 * common_pad_y)
 
-        self._draw_rect_alpha((30, 30, 30, 200), (inner_x, inner_y, inner_w, inner_h))
-        self.draw_character_gear(inner_w, inner_x, inner_y)
+        self._draw_rect_alpha((30, 30, 30, 200), (common_inner_x, gear_inner_y, common_inner_w, gear_inner_h))
+        self.draw_character_gear(common_inner_w, gear_sub_h - common_pad_y, common_inner_x, gear_inner_y)
 
         # Inventory sub-panel
-        inner_y = panel_y + panel_h - sub_h + pad_y
+        inventory_sub_h = int(panel_h * 0.3)
+        inventory_inner_h = inventory_sub_h - (2 * common_pad_y)
+        inventory_inner_y = panel_y + panel_h - inventory_sub_h
 
-        self._draw_rect_alpha((30, 30, 30, 200), (inner_x, inner_y, inner_w, inner_h))
-        self.draw_character_inventory(inner_w, inner_x, inner_y)
+        self._draw_rect_alpha((30, 30, 30, 200), (common_inner_x, inventory_inner_y, common_inner_w, inventory_inner_h))
+        self.draw_character_inventory(common_inner_w, common_inner_x, inventory_inner_y)
 
     def draw_loot_slot(self, x: int, y: int, width: int, height: int) -> None:
         slot_color = (0, 0, 0, 180)
         self._draw_rect_alpha(slot_color, (x, y, width, height))
 
-    def draw_character_gear(self, panel_width: int, panel_x: int, panel_y: int) -> None:
+    def draw_character_gear(self, panel_width: int,  panel_height: int, panel_x: int, panel_y: int) -> None:
         cols = 6
         rows = 12
         gap = 2
 
         # Compute max square cell size that fits inside the panel, accounting for gaps
         cell_size_w = (panel_width - gap * (cols - 1)) // cols
-        cell_size_h = (panel_width - gap * (rows - 1)) // rows
+        cell_size_h = (panel_height - gap * (rows - 1)) // rows
         cell_size = min(cell_size_w, cell_size_h)
 
         # Compute horizontal offset to center the grid
         total_grid_width = cell_size * cols + gap * (cols - 1)
         x_offset = panel_x + (panel_width - total_grid_width) // 2
 
-        def cell_to_px(col: int, row: int) -> tuple[int, int]:
+        def cell_to_px(cell_col: int, cell_row: int) -> tuple[int, int]:
             # col, row are 1-based
-            x = x_offset + (col - 1) * (cell_size + gap)
-            y = panel_y + (row - 1) * (cell_size + gap)
+            x = x_offset + (cell_col - 1) * (cell_size + gap)
+            y = panel_y + (cell_row - 1) * (cell_size + gap)
             return x, y
 
         layout = {
@@ -378,10 +395,32 @@ class DrawSystem:
                 (loot_px_w, loot_px_h),
             )
 
-            self.screen.blit(scaled, (cell_x, cell_y))
+            self.draw_interactable(scaled, (cell_x, cell_y), ScreenLayer.UI, loot)
+
+    def draw_cursor_loot(self) -> None:
+        """Draw the first loot from the player's cursor_loot container at the mouse cursor.
+        This renders on top of the UI so the player sees the item they're holding.
+        """
+        if not self.player:
+            return
+
+        if self.player.cursor_loot.get_loot_count() == 0:
+            return
+
+        # Prefer the lookup by loot_dict (maps loot_id -> loot)
+        loot = next(iter(self.player.cursor_loot.loot_dict.values()))
+        if loot is None:
+            return
+
+        # Draw the loot image at the mouse position, centered. Scale to a reasonable UI size.
+        mouse_x, mouse_y = pygame.mouse.get_pos()
+        draw_size = 32
+        scaled = pygame.transform.scale(loot.image, (draw_size, draw_size))
+
+        rect = scaled.get_rect(center=(mouse_x, mouse_y))
+        self.screen.blit(scaled, rect.topleft)
 
     def _draw_rect_alpha(self, color, rect):
         shape_surf = Surface(pygame.Rect(rect).size, pygame.SRCALPHA)
         pygame.draw.rect(shape_surf, color, shape_surf.get_rect())
         self.screen.blit(shape_surf, rect)
-

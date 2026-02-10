@@ -8,6 +8,8 @@ from systems.AudioSystem import AudioSystem
 from systems.ClientReceiverSystem import ClientReceiverSystem
 from systems.DrawSystem import DrawSystem
 from systems.InputSystem import InputSystem, Control
+from systems.InteractableSystem import InteractableSystem
+from systems.InventorySystem import InventorySystem
 
 
 class GameClient:
@@ -22,8 +24,10 @@ class GameClient:
 
         self.server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.input_system = InputSystem(self.server)
-        self.draw_system = DrawSystem(self.clock, self.input_system)
+        self.interactable_system = InteractableSystem()
+        self.draw_system = DrawSystem(self.clock, self.input_system, self.interactable_system)
         self.audio_system = AudioSystem()
+        self.inventory_system = InventorySystem(self.input_system, self.interactable_system, self.server)
         self.receiver = ClientReceiverSystem(self.server)
 
         self.input_system.subscribe(Control.QUIT, self.stop)
@@ -33,7 +37,7 @@ class GameClient:
         threading.Thread(target=self.client_thread, args=(), daemon=True).start()
         self.game_thread()
 
-    def stop(self):
+    def stop(self, _):
         self.running = False
 
     def client_thread(self):
@@ -58,6 +62,7 @@ class GameClient:
                         self.player = player
                         self.input_system.player = player
                         self.draw_system.player = player
+                        self.inventory_system.player = player
 
             self.input_system.handle_events()
             self.draw_system.draw(self.receiver.area)

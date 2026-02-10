@@ -24,6 +24,7 @@ class Control(IntEnum):
     SKILL1 = auto()
     STOP_SKILL1 = auto()
     AIM = auto()
+    BASIC_INTERACTION = auto()
 
 
 class InputSystem:
@@ -47,6 +48,7 @@ class InputSystem:
             Control.SKILL1: [(pygame.MOUSEBUTTONDOWN, 1)],
             Control.STOP_SKILL1: [(pygame.MOUSEBUTTONUP, 1)],
             Control.AIM: [(pygame.MOUSEMOTION, None)],
+            Control.BASIC_INTERACTION: [(pygame.MOUSEBUTTONDOWN, 1)]
         }
         self.input_control_map = self.invert_control_input_map()
         self.subscribe_all()
@@ -55,7 +57,9 @@ class InputSystem:
         inverted_map = {}
         for control, inputs in self.control_input_map.items():
             for event_type, key in inputs:
-                inverted_map[(event_type, key)] = control
+                if (event_type, key) not in inverted_map:
+                    inverted_map[(event_type, key)] = []
+                inverted_map[(event_type, key)].append(control)
         return inverted_map
 
     def subscribe(self, control: Control, callback: Callable) -> None:
@@ -79,13 +83,13 @@ class InputSystem:
                 key = event.button
             elif is_key:
                 key = event.key
-            control = self.input_control_map.get((event.type, key), None)
+            controls = self.input_control_map.get((event.type, key), [])
 
             # Notify subscribers
-            if control is not None:
+            for control in controls:
                 if control in self.subscriptions:
                     for callback in self.subscriptions[control]:
-                        callback()
+                        callback(event)
 
     def subscribe_all(self):
         self.subscribe(Control.MOVE_UP, partial(self.move_start, Direction.UP))
@@ -100,13 +104,13 @@ class InputSystem:
         self.subscribe(Control.STOP_SKILL1, self.attack_stop)
         self.subscribe(Control.AIM, self.attack_aim)
 
-    def move_start(self, direction: Direction) -> None:
+    def move_start(self, direction: Direction, _) -> None:
         self.server.sendall(f'move:{direction.value}\n'.encode())
 
-    def move_stop(self, direction: Direction) -> None:
+    def move_stop(self, direction: Direction, _) -> None:
         self.server.sendall(f'stop:{direction.value}\n'.encode())
 
-    def attack_start(self):
+    def attack_start(self, _):
         if not self.player:
             return
 
@@ -115,11 +119,11 @@ class InputSystem:
         self.server.sendall(f'attack:{angle},{magnitude}\n'.encode())
         self.attacking = True
 
-    def attack_aim(self):
+    def attack_aim(self, _):
         if self.attacking:
-            self.attack_start()
+            self.attack_start(_)
 
-    def attack_stop(self):
+    def attack_stop(self, _):
         self.server.sendall('attack_stop\n'.encode())
         self.attacking = False
 

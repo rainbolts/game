@@ -20,13 +20,14 @@ class GameServer:
     def __init__(self):
         pygame.init()
 
+        self.server_id = 1
         self.host = '127.0.0.1'
         self.port = 8888
         self.running = False
         self.clients: dict[socket.socket, Client] = {}
 
         self.area_system = AreaSystem()
-        self.loot_system = LootSystem(self.area_system)
+        self.loot_system = LootSystem(self.area_system, self.server_id)
         self.movement_system = MovementSystem(self.area_system)
         self.skill_system = SkillSystem(self.area_system)
         self.damage_system = DamageSystem(self.area_system, self.loot_system)

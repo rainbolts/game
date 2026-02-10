@@ -17,6 +17,8 @@ class ServerReceiverSystem:
         self.movement_system = movement_system
         self.skill_system = skill_system
         self.client_buffer: dict[Client, str] = {}
+        self.loot_system = None
+        self.broadcaster = None
 
     def receive_updates(self, client: Client, address: str):
         if client not in self.client_buffer:
@@ -51,3 +53,12 @@ class ServerReceiverSystem:
 
             elif message.startswith('attack_stop'):
                 self.skill_system.stop_attacking(client.player)
+
+            elif message.startswith('grab_inventory:'):
+                split = message.split(':')
+                server_id = int(split[1])
+                loot_id = int(split[2])
+                loot = client.player.inventory.get_loot(server_id, loot_id)
+                client.player.inventory.move_to_container(loot, client.player.cursor_loot)
+
+        self.client_buffer[client] = client_buffer

@@ -5,8 +5,10 @@ from systems.AreaSystem import AreaSystem
 
 
 class LootSystem:
-    def __init__(self, area_system: AreaSystem):
+    def __init__(self, area_system: AreaSystem, server_id: int):
         self.area_system = area_system
+        self.server_id = server_id
+        self.next_item_id = 1
 
     def check_collisions(self):
         for area in self.area_system.areas:
@@ -18,8 +20,7 @@ class LootSystem:
                         area.loots.remove(loot)
                         player.inventory.try_add_loot(loot)
 
-    @staticmethod
-    def generate_loot(area: Area, enemy: Enemy):
+    def generate_loot(self, area: Area, enemy: Enemy):
         if isinstance(enemy, NormalEnemy):
             num_loot = 1
         elif isinstance(enemy, BossEnemy):
@@ -28,4 +29,6 @@ class LootSystem:
             raise ValueError(f'Unknown enemy type: {type(enemy)}')
 
         for _ in range(num_loot):
-            area.loots.add(RingLoot(enemy.get_pixel_location()))
+            loot_id = self.next_item_id
+            self.next_item_id += 1
+            area.loots.add(RingLoot(self.server_id, loot_id, enemy.get_pixel_location()))
