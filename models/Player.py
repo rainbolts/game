@@ -6,6 +6,7 @@ from pygame import Vector2
 from models.Direction import Direction
 from models.Entity import Entity
 from models.LootContainer import LootContainer
+from models.Loot import GearSlot, Loot
 
 
 class Player(Entity):
@@ -20,6 +21,7 @@ class Player(Entity):
 
         self.inventory = LootContainer(10, 6)
         self.cursor_loot = LootContainer(99, 99)
+        self.gear: dict[GearSlot, Loot | None] = dict.fromkeys(GearSlot, None)
         self.show_character_panel = False
 
     def set_preferred_velocity(self, direction: Direction):
@@ -56,12 +58,21 @@ class Player(Entity):
         result['client_id'] = self.client_id
         result['inventory'] = self.inventory.to_broadcast()
         result['cursor_loot'] = self.cursor_loot.to_broadcast()
+        gear_list = []
+        for slot, loot in self.gear.items():
+            if loot is not None:
+                gear_list.append((int(slot), loot.to_broadcast()))
+        result['gear'] = gear_list
         return result
 
     def merge_broadcast(self, data: dict[str, Any]):
         super().merge_broadcast(data)
         self.inventory.merge_broadcast(data['inventory'])
         self.cursor_loot.merge_broadcast(data['cursor_loot'])
+        self.gear = dict.fromkeys(GearSlot, None)
+        for slot_value, loot_data in data.get('gear', []):
+            slot = GearSlot(int(slot_value))
+            self.gear[slot] = Loot.from_broadcast(loot_data)
 
     @staticmethod
     def from_broadcast(data: dict[str, Any]) -> 'Player':
@@ -71,4 +82,8 @@ class Player(Entity):
         result._preferred_velocity = Vector2(vx, vy)
         result.inventory = LootContainer.from_broadcast(data['inventory'])
         result.cursor_loot = LootContainer.from_broadcast(data['cursor_loot'])
+        result.gear = dict.fromkeys(GearSlot, None)
+        for slot_value, loot_data in data.get('gear', []):
+            slot = GearSlot(int(slot_value))
+            result.gear[slot] = Loot.from_broadcast(loot_data)
         return result

@@ -4,6 +4,7 @@ from pygame import Vector2
 
 from models.Client import Client
 from models.Direction import Direction
+from models.Loot import GearSlot, Loot
 from systems.MovementSystem import MovementSystem
 from systems.SkillSystem import SkillSystem
 
@@ -71,5 +72,35 @@ class ServerReceiverSystem:
                 loot = client.player.cursor_loot.get_loot(server_id, loot_id)
                 if loot is not None:
                     client.player.cursor_loot.move_to_container(loot, client.player.inventory, col, row)
+
+            elif message.startswith('grab_gear:'):
+                # Format: grab_gear:slot_value
+                slot_value = int(message.split(':')[1])
+                slot = GearSlot(slot_value)
+                loot = client.player.gear.get(slot)
+                if loot is not None and client.player.cursor_loot.get_loot_count() == 0:
+                    # Move gear item to cursor
+                    client.player.gear[slot] = None
+                    client.player.cursor_loot.add_loot(loot)
+
+            elif message.startswith('drop_gear:'):
+                # Format: drop_gear:server_id:loot_id:slot_value
+                split = message.split(':')
+                server_id = int(split[1])
+                loot_id = int(split[2])
+                slot_value = int(split[3])
+                slot = GearSlot(slot_value)
+
+                loot = client.player.cursor_loot.get_loot(server_id, loot_id)
+                if loot is None:
+                    continue
+
+                is_empty = client.player.gear.get(slot) is None
+                if not is_empty:
+                    continue
+
+                if slot in Loot.GEAR_COMPATIBILITY[loot.loot_type]:
+                    client.player.cursor_loot.remove(loot)
+                    client.player.gear[slot] = loot
 
         self.client_buffer[client] = client_buffer

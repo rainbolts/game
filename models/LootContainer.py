@@ -13,7 +13,6 @@ class LootContainer:
     def try_add_loot(self, loot: Loot) -> bool:
         """
         Find a position to place loot, and place it. Scans left to right first, top to bottom second.
-        :param loot:
         :return: True if loot was added, else False
         """
         for y in range(self.height - loot.inventory_height + 1):
@@ -44,18 +43,27 @@ class LootContainer:
         self.loot_dict[(loot.server_id, loot.loot_id)] = loot
         return True
 
+    def get_container_position(self, loot: Loot) -> tuple[int, int] | None:
+        for position, existing_loot in self.loot.items():
+            if existing_loot == loot:
+                return position
+        return None
+
+    def remove(self, loot: Loot) -> None:
+        position = self.get_container_position(loot)
+        if position is None:
+            return
+
+        del self.loot[position]
+        del self.loot_dict[(loot.server_id, loot.loot_id)]
+
     def move_to_container(self,
                           loot: Loot,
                           other_container: 'LootContainer',
                           col: int | None = None,
                           row: int | None = None) -> None:
-        # Check loot exists in this container
-        source_position = None
-        for position, existing_loot in self.loot.items():
-            if existing_loot == loot:
-                source_position = position
-                break
-        if source_position is None:
+        position = self.get_container_position(loot)
+        if position is None:
             return
 
         # Attempt placement in other container
@@ -68,9 +76,8 @@ class LootContainer:
             return
 
         # Remove from this container
-        del self.loot[source_position]
-        if (loot.server_id, loot.loot_id) in self.loot_dict:
-            del self.loot_dict[(loot.server_id, loot.loot_id)]
+        del self.loot[position]
+        del self.loot_dict[(loot.server_id, loot.loot_id)]
 
     def get_loot(self, server_id: int, loot_id: int) -> Loot | None:
         return self.loot_dict.get((server_id, loot_id))

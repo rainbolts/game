@@ -328,7 +328,7 @@ class DrawSystem:
             GearSlot.CAPE: (1, 1, 2, 3),
             GearSlot.LANTERN: (5, 1, 1, 1),
             GearSlot.HEAD: (3, 1, 2, 2),
-            GearSlot.NECKLACE: (5, 2, 1, 1),
+            GearSlot.NECK: (5, 2, 1, 1),
             GearSlot.BODY: (3, 3, 2, 3),
             GearSlot.SHOULDER: (5, 3, 2, 1),
             GearSlot.MAIN_HAND: (1, 4, 2, 3),
@@ -353,14 +353,23 @@ class DrawSystem:
             GearSlot.CHARM4: (6, 11, 1, 1),
         }
 
-        for col, row, w, h in layout.values():
+        for slot, (col, row, w, h) in layout.items():
             lx, ly = cell_to_px(col, row)
+            slot_w = cell_size * w + (w - 1) * gap
+            slot_h = cell_size * h + (h - 1) * gap
             self.draw_loot_slot(
                 lx,
                 ly,
-                cell_size * w + (w - 1) * gap,
-                cell_size * h + (h - 1) * gap,
+                slot_w,
+                slot_h,
             )
+            self._draw_interactable_rect_alpha((0, 0, 0, 0), (lx, ly, slot_w, slot_h), ScreenLayer.UI, (self.player, slot))
+
+            # Draw equipped gear
+            loot = self.player.gear.get(slot)
+            if loot is not None:
+                scaled = pygame.transform.scale(loot.image, (slot_w, slot_h))
+                self._draw_interactable(scaled, (lx, ly), ScreenLayer.UI, loot)
 
     def draw_character_inventory(self, panel_width: int, panel_x: int, panel_y: int) -> None:
         gap = 3
