@@ -81,7 +81,7 @@ class ServerReceiverSystem:
                 if loot is not None and client.player.cursor_loot.get_loot_count() == 0:
                     # Move gear item to cursor
                     client.player.gear[slot] = None
-                    client.player.cursor_loot.add_loot(loot)
+                    client.player.cursor_loot.try_add_loot(loot)
 
             elif message.startswith('drop_gear:'):
                 # Format: drop_gear:server_id:loot_id:slot_value

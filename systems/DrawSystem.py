@@ -369,7 +369,7 @@ class DrawSystem:
             loot = self.player.gear.get(slot)
             if loot is not None:
                 scaled = pygame.transform.scale(loot.image, (slot_w, slot_h))
-                self._draw_interactable(scaled, (lx, ly), ScreenLayer.UI, loot)
+                self._draw_interactable(scaled, (lx, ly), ScreenLayer.UI, (self.player, slot, loot))
 
     def draw_character_inventory(self, panel_width: int, panel_x: int, panel_y: int) -> None:
         gap = 3
