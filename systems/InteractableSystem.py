@@ -35,7 +35,7 @@ class InteractableSystem:
         for layer in self.layer_test_order:
             if layer not in self.layers:
                 continue
-            for interactable in self.layers[layer]:
+            for interactable in reversed(self.layers[layer]):
                 if interactable.hitbox.collidepoint(point):
                     return interactable
         return None

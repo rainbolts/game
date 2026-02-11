@@ -121,11 +121,6 @@ class DrawSystem:
         self.draw_fps()
         pygame.display.flip()
 
-    def draw_interactable(self, surface: Surface, location: tuple[int, int], layer: ScreenLayer, obj: object):
-        interactable = Interactable(layer, surface.get_rect(topleft=location), obj)
-        self.screen.blit(surface, interactable.hitbox)
-        self.interactable_system.add_interactable(interactable)
-
     def draw_players(self, players: list[Player], offset: tuple[int, int]):
         for player in players:
             velocity = player.get_preferred_velocity()
@@ -145,7 +140,7 @@ class DrawSystem:
             image = pygame.transform.scale(image, (50, 50))
             location = player.get_pixel_location()
             offset_location = (location[0] + offset[0], location[1] + offset[1])
-            self.draw_interactable(image, offset_location, ScreenLayer.ABOVE_GROUND, player)
+            self._draw_interactable(image, offset_location, ScreenLayer.ABOVE_GROUND, player)
 
     def draw_projectiles(self, projectiles: list[Projectile], offset: tuple[int, int]):
         for projectile in projectiles:
@@ -165,18 +160,18 @@ class DrawSystem:
         for enemy in enemies:
             location = enemy.get_pixel_location()
             offset_location = (location[0] + offset[0], location[1] + offset[1])
-            self.draw_interactable(enemy.image, offset_location, ScreenLayer.ABOVE_GROUND, enemy)
+            self._draw_interactable(enemy.image, offset_location, ScreenLayer.ABOVE_GROUND, enemy)
 
     def draw_loots(self, loots: list[Loot], offset: tuple[int, int]):
         for loot in loots:
             location = loot.get_pixel_location()
             offset_location = (location[0] + offset[0], location[1] + offset[1])
-            self.draw_interactable(loot.image, offset_location, ScreenLayer.ON_GROUND, loot)
+            self._draw_interactable(loot.image, offset_location, ScreenLayer.ON_GROUND, loot)
 
     def draw_exit(self, exit: ExitDoor, offset: tuple[int, int]):
         location = exit.get_pixel_location()
         offset_location = (location[0] + offset[0], location[1] + offset[1])
-        self.draw_interactable(exit.image, offset_location, ScreenLayer.ON_GROUND, exit)
+        self._draw_interactable(exit.image, offset_location, ScreenLayer.ON_GROUND, exit)
 
     def draw_area(self, area: Area, offset: tuple[int, int]):
         self.draw_floor(area, offset)
@@ -381,7 +376,7 @@ class DrawSystem:
                 cell_y = panel_y + row * (cell_size + gap)
                 rect = (cell_x, cell_y, cell_size, cell_size)
 
-                self._draw_rect_alpha((0, 0, 0, 180), rect)
+                self._draw_interactable_rect_alpha((0, 0, 0, 180), rect, ScreenLayer.UI, (self.player.inventory, col, row))
 
         for (col, row), loot in self.player.inventory.loot.items():
             cell_x = panel_x + col * (cell_size + gap)
@@ -395,7 +390,7 @@ class DrawSystem:
                 (loot_px_w, loot_px_h),
             )
 
-            self.draw_interactable(scaled, (cell_x, cell_y), ScreenLayer.UI, loot)
+            self._draw_interactable(scaled, (cell_x, cell_y), ScreenLayer.UI, loot)
 
     def draw_cursor_loot(self) -> None:
         """Draw the first loot from the player's cursor_loot container at the mouse cursor.
@@ -420,7 +415,24 @@ class DrawSystem:
         rect = scaled.get_rect(center=(mouse_x, mouse_y))
         self.screen.blit(scaled, rect.topleft)
 
-    def _draw_rect_alpha(self, color, rect):
+    def _draw_interactable(self, surface: Surface, location: tuple[int, int], layer: ScreenLayer, obj: object):
+        interactable = Interactable(layer, surface.get_rect(topleft=location), obj)
+        self.screen.blit(surface, interactable.hitbox)
+        self.interactable_system.add_interactable(interactable)
+
+    def _draw_rect_alpha(self,
+                         argb: tuple[int, int, int, int],
+                         rect: tuple[int, int, int, int]):
         shape_surf = Surface(pygame.Rect(rect).size, pygame.SRCALPHA)
-        pygame.draw.rect(shape_surf, color, shape_surf.get_rect())
+        pygame.draw.rect(shape_surf, argb, shape_surf.get_rect())
         self.screen.blit(shape_surf, rect)
+
+    def _draw_interactable_rect_alpha(self,
+                                      argb: tuple[int, int, int, int],
+                                      rect: tuple[int, int, int, int],
+                                      layer: ScreenLayer,
+                                      obj: object):
+        self._draw_rect_alpha(argb, rect)
+        interactable = Interactable(layer, pygame.Rect(rect), obj)
+        self.interactable_system.add_interactable(interactable)
+

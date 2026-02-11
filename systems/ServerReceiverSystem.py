@@ -61,4 +61,15 @@ class ServerReceiverSystem:
                 loot = client.player.inventory.get_loot(server_id, loot_id)
                 client.player.inventory.move_to_container(loot, client.player.cursor_loot)
 
+            elif message.startswith('drop_inventory:'):
+                split = message.split(':')
+                # Expected format: drop_inventory:server_id:loot_id:col:row
+                server_id = int(split[1])
+                loot_id = int(split[2])
+                col = int(split[3])
+                row = int(split[4])
+                loot = client.player.cursor_loot.get_loot(server_id, loot_id)
+                if loot is not None:
+                    client.player.cursor_loot.move_to_container(loot, client.player.inventory, col, row)
+
         self.client_buffer[client] = client_buffer
