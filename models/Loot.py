@@ -17,6 +17,20 @@ class LootType(IntEnum):
     WEAPON = auto()
     SHIELD = auto()
 
+    def __str__(self) -> str:
+        return {
+            LootType.SHOULDER: 'Shoulder',
+            LootType.NECKLACE: 'Necklace',
+            LootType.LANTERN: 'Lantern',
+            LootType.CAPE: 'Cape',
+            LootType.RING: 'Ring',
+            LootType.GLOVES: 'Gloves',
+            LootType.BODY: 'Body',
+            LootType.HELMET: 'Helmet',
+            LootType.WEAPON: 'Weapon',
+            LootType.SHIELD: 'Shield',
+        }[self]
+
 
 class GearSlot(IntEnum):
     FEET = auto()
@@ -80,26 +94,29 @@ class Loot(Entity):
         self.loot_type = loot_type
         self.modifiers: list[LootModifier] = []
 
+    def to_broadcast(self) -> dict[str, Any]:
+        result = super().to_broadcast()
+        result['server_id'] = self.server_id
+        result['loot_id'] = self.loot_id
+        result['type'] = self.loot_type
+        result['modifiers'] = [modifier.to_broadcast() for modifier in self.modifiers]
+        return result
+
     @staticmethod
     def from_broadcast(data: dict[str, Any]) -> 'Loot':
         loot_type = int(data['type'])
+        server_id = int(data['server_id'])
+        loot_id = int(data['loot_id'])
+        spawn = (int(data['x']), int(data['y']))
+        modifiers = [LootModifier.from_broadcast(mod_data) for mod_data in data['modifiers']]
         if loot_type == LootType.RING:
-            return RingLoot.from_broadcast(data)
+            result = RingLoot(server_id, loot_id, spawn)
         else:
             raise ValueError(f'Unknown loot type: {loot_type}')
+        result.modifiers = modifiers
+        return result
 
 
 class RingLoot(Loot):
     def __init__(self, server_id: int, loot_id: int, spawn: tuple[int, int]):
         super().__init__(server_id, loot_id, spawn, 1, 1, LootType.RING)
-
-    def to_broadcast(self) -> dict[str, Any]:
-        result = super().to_broadcast()
-        result['server_id'] = self.server_id
-        result['loot_id'] = self.loot_id
-        result['type'] = LootType.RING
-        return result
-
-    @staticmethod
-    def from_broadcast(data: dict) -> 'RingLoot':
-        return RingLoot(int(data['server_id']), int(data['loot_id']), (int(data['x']), int(data['y'])))

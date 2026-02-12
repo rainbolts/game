@@ -23,8 +23,8 @@ class GameClient:
         self.clock = pygame.time.Clock()
 
         self.server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.input_system = InputSystem(self.server)
         self.interactable_system = InteractableSystem()
+        self.input_system = InputSystem(self.server, self.interactable_system)
         self.draw_system = DrawSystem(self.clock, self.input_system, self.interactable_system)
         self.audio_system = AudioSystem()
         self.inventory_system = InventorySystem(self.input_system, self.interactable_system, self.server)

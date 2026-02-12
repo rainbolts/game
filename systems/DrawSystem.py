@@ -115,9 +115,8 @@ class DrawSystem:
                 self.draw_exit(area.exit, offset)
 
         self.draw_character_panel()
-
         self.draw_cursor_loot()
-
+        self.draw_hovered()
         self.draw_fps()
         pygame.display.flip()
 
@@ -423,6 +422,48 @@ class DrawSystem:
 
         rect = scaled.get_rect(center=(mouse_x, mouse_y))
         self.screen.blit(scaled, rect.topleft)
+
+    def draw_hovered(self) -> None:
+        if self.input_system.hovered is None:
+            return
+
+        if isinstance(self.input_system.hovered, Loot):
+            loot = self.input_system.hovered
+            # Draw a box at the cursor position containing lines of text. First line is loot type (e.g., "Ring"). Remaining lines are modifiers.
+            lines = [str(loot.loot_type)]
+            for modifier in loot.modifiers:
+                modifier_line = modifier.modifier_type
+                for value in modifier.values:
+                    modifier_line = modifier_line.replace('#', str(value), 1)
+                lines.append(str(modifier_line))
+
+            mouse_x, mouse_y = pygame.mouse.get_pos()
+            font = pygame.font.SysFont('Arial', 16)
+            text_surfaces = [font.render(line, False, (255, 255, 255)) for line in lines]
+            max_width = max(surface.get_width() for surface in text_surfaces)
+            total_height = sum(surface.get_height() for surface in text_surfaces)
+            padding = 4
+            box_width = max_width + 2 * padding
+            box_height = total_height + 2 * padding
+            box_surface = pygame.Surface((box_width, box_height), pygame.SRCALPHA)
+            box_surface.fill((0, 0, 0, 200))
+            y_offset = padding
+            for surface in text_surfaces:
+                box_surface.blit(surface, (padding, y_offset))
+                y_offset += surface.get_height()
+
+            # If the box would go off the bottom or right edge of the screen, shift it up or left so it stays on screen
+            draw_x = mouse_x
+            draw_y = mouse_y - box_height
+            screen_width, screen_height = self.screen.get_size()
+            if draw_x + box_width > screen_width:
+                draw_x = screen_width - box_width
+            if draw_y < 0:
+                draw_y = 0
+
+            self.screen.blit(box_surface, (draw_x, draw_y))
+        else:
+            raise NotImplementedError(f'Draw code for hoverable type {type(self.input_system.hovered)} not implemented')
 
     def _draw_interactable(self, surface: Surface, location: tuple[int, int], layer: ScreenLayer, obj: object):
         interactable = Interactable(layer, surface.get_rect(topleft=location), obj)

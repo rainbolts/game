@@ -2,12 +2,14 @@ import math
 import socket
 from enum import IntEnum, auto
 from functools import partial
-from typing import Callable
+from typing import Callable, Any
 
 import pygame
 
 from models.Direction import Direction
+from models.Loot import Loot
 from models.Player import Player
+from systems.InteractableSystem import InteractableSystem
 
 
 class Control(IntEnum):
@@ -28,11 +30,13 @@ class Control(IntEnum):
 
 
 class InputSystem:
-    def __init__(self, server: socket.socket) -> None:
+    def __init__(self, server: socket.socket, interactable_system: InteractableSystem) -> None:
         self.server = server
+        self.interactable_system = interactable_system
         self.subscriptions: dict[Control, set[Callable]] = {}
         self.player: Player | None = None
         self.attacking: bool = False
+        self.hovered: Any = None
         self.game_width, self.game_height = self._get_game_size()
         self.control_input_map = {
             Control.QUIT: [(pygame.QUIT, None)],
@@ -103,6 +107,7 @@ class InputSystem:
         self.subscribe(Control.SKILL1, self.attack_start)
         self.subscribe(Control.STOP_SKILL1, self.attack_stop)
         self.subscribe(Control.AIM, self.attack_aim)
+        self.subscribe(Control.AIM, self.hover_loot)
 
     def move_start(self, direction: Direction, _) -> None:
         self.server.sendall(f'move:{direction.value}\n'.encode())
@@ -126,6 +131,26 @@ class InputSystem:
     def attack_stop(self, _):
         self.server.sendall('attack_stop\n'.encode())
         self.attacking = False
+
+    def hover_loot(self, _):
+        if not self.player:
+            return
+
+        interactable = self.interactable_system.hit_test(pygame.mouse.get_pos())
+        if not interactable:
+            self.hovered = None
+            return
+
+        loot = None
+        if isinstance(interactable.obj, Loot):
+            loot = interactable.obj
+        elif isinstance(interactable.obj, tuple):
+            for item in interactable.obj:
+                if isinstance(item, Loot):
+                    loot = item
+                    break
+        if loot:
+            self.hovered = loot
 
     def get_offset(self, player: Player) -> tuple[int, int]:
         x, y = player.get_center()
