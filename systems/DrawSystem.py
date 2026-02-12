@@ -387,7 +387,7 @@ class DrawSystem:
 
                 self._draw_interactable_rect_alpha((0, 0, 0, 180), rect, ScreenLayer.UI, (self.player.inventory, col, row))
 
-        for (col, row), loot in self.player.inventory.loot.items():
+        for (col, row), loot in list(self.player.inventory.loot.items()):  # NOSONAR Copy required because dict may be updated during iteration
             cell_x = panel_x + col * (cell_size + gap)
             cell_y = panel_y + row * (cell_size + gap)
 

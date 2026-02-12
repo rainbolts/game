@@ -7,9 +7,9 @@ from models.Entity import Entity
 
 
 class Projectile(Entity):
-    def __init__(self, spawn: tuple[int, int], time_to_live: int, initial_velocity: Vector2, height: int = 10, width: int = 10):
+    def __init__(self, spawn: tuple[int, int], time_to_live: int, initial_velocity: Vector2, height: int = 10, width: int = 10, damage: int = 0):
         super().__init__(spawn, height, width, (0, 255, 255), time_to_live)
-        self.damage = 1
+        self.damage = damage
         self._preferred_velocity = initial_velocity
 
     def get_collision_behaviors(self) -> list[CollisionBehavior]:

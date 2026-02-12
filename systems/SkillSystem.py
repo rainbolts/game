@@ -1,6 +1,7 @@
 import pygame
 from pygame import Vector2
 
+from models.LootModifier import ModifierType
 from models.Player import Player
 from models.skills.Skill import Skill
 from systems.AreaSystem import AreaSystem
@@ -33,7 +34,8 @@ class SkillSystem:
 
                     origin = player.get_center()
                     skill = Skill(origin, destination_vector)
-                    projectiles = skill.spawn_projectiles()
+                    damage = skill.base_damage + int(player.total_from_gear(ModifierType.DAMAGE_FLAT) * (1 + player.total_from_gear(ModifierType.DAMAGE_PERCENT) / 100))
+                    projectiles = skill.spawn_projectiles(damage)
                     area.projectiles.add(projectiles)
 
                     player.last_attacked_time = current_time

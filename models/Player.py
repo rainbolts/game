@@ -7,14 +7,13 @@ from models.Direction import Direction
 from models.Entity import Entity
 from models.LootContainer import LootContainer
 from models.Loot import GearSlot, Loot
+from models.LootModifier import ModifierType
 
 
 class Player(Entity):
     def __init__(self, client_id: int | None, spawn: tuple[int, int]):
         super().__init__(spawn, 40, 40, (0, 255, 0))
         self.client_id = client_id
-        self.movement_speed: float = 3.0
-        self.attacks_per_second: float = 1.0
 
         self.last_direction: Direction = Direction.DOWN
         self.last_attacked_time: int = 0
@@ -23,6 +22,27 @@ class Player(Entity):
         self.cursor_loot = LootContainer(99, 99)
         self.gear: dict[GearSlot, Loot | None] = dict.fromkeys(GearSlot, None)
         self.show_character_panel = False
+
+    @property
+    def movement_speed(self) -> float:
+        base_speed = 3.0
+        total_percent_multiplier = 1.0 + self.total_from_gear(ModifierType.MOVEMENT_SPEED_PERCENT) / 100.0
+        return base_speed * total_percent_multiplier
+
+    @property
+    def attacks_per_second(self) -> float:
+        base_aps = 1.0
+        total_percent_multiplier = 1.0 + self.total_from_gear(ModifierType.ATTACK_SPEED_PERCENT) / 100.0
+        return base_aps * total_percent_multiplier
+
+    def total_from_gear(self, modifier_type: ModifierType) -> float:
+        total = 0.0
+        for gear in self.gear.values():
+            if gear is not None:
+                for modifier in gear.modifiers:
+                    if modifier.modifier_type == modifier_type:
+                        total += modifier.values[0]
+        return total
 
     def set_preferred_velocity(self, direction: Direction):
         go_left = Direction.LEFT in direction

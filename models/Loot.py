@@ -2,6 +2,7 @@ from enum import IntEnum, auto
 from typing import Any
 
 from models.Entity import Entity
+from models.LootModifier import LootModifier
 
 
 class LootType(IntEnum):
@@ -77,6 +78,7 @@ class Loot(Entity):
         self.inventory_width = inventory_width
         self.inventory_height = inventory_height
         self.loot_type = loot_type
+        self.modifiers: list[LootModifier] = []
 
     @staticmethod
     def from_broadcast(data: dict[str, Any]) -> 'Loot':
