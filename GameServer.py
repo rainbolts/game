@@ -32,7 +32,7 @@ class GameServer:
         self.skill_system = SkillSystem(self.area_system)
         self.damage_system = DamageSystem(self.area_system, self.loot_system)
         self.broadcaster = ServerBroadcastSystem(self.clients, self.area_system)
-        self.receiver = ServerReceiverSystem(self.clients, self.movement_system, self.skill_system)
+        self.receiver = ServerReceiverSystem(self.clients, self.movement_system, self.skill_system, self.area_system)
 
     def run(self):
         self.running = True

@@ -5,6 +5,7 @@ from pygame import Vector2
 from models.Client import Client
 from models.Direction import Direction
 from models.Loot import GearSlot, Loot
+from systems.AreaSystem import AreaSystem
 from systems.MovementSystem import MovementSystem
 from systems.SkillSystem import SkillSystem
 
@@ -13,10 +14,12 @@ class ServerReceiverSystem:
     def __init__(self,
                  clients: dict[socket, Client],
                  movement_system: MovementSystem,
-                 skill_system: SkillSystem):
+                 skill_system: SkillSystem,
+                 area_system: AreaSystem):
         self.clients = clients
         self.movement_system = movement_system
         self.skill_system = skill_system
+        self.area_system = area_system
         self.client_buffer: dict[Client, str] = {}
         self.loot_system = None
         self.broadcaster = None
@@ -102,5 +105,25 @@ class ServerReceiverSystem:
                 if slot in Loot.GEAR_COMPATIBILITY[loot.loot_type]:
                     client.player.cursor_loot.remove(loot)
                     client.player.gear[slot] = loot
+
+            elif message.startswith('drop_ground:'):
+                # Format: drop_ground:server_id:loot_id:x:y
+                split = message.split(':')
+                server_id = int(split[1])
+                loot_id = int(split[2])
+                x = float(split[3])
+                y = float(split[4])
+                loot = client.player.cursor_loot.get_loot(server_id, loot_id)
+                if loot is None:
+                    continue
+                client.player.cursor_loot.remove(loot)
+
+                loot.move_absolute(x, y)
+                for area in self.area_system.areas:
+                    if client.player in area.players:
+                        loot.area = area
+                        area.loots.add(loot)
+                        # Once added to the correct area stop searching further areas
+                        break
 
         self.client_buffer[client] = client_buffer

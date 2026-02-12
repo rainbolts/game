@@ -12,6 +12,7 @@ class InventorySystem:
         self.player: Player | None = None
         self.interactable_system = interactable_system
         self.server = server
+        self.input_system = input_system
         input_system.subscribe(Control.BASIC_INTERACTION, self.grab_item)
 
     def grab_item(self, event) -> None:
@@ -20,6 +21,14 @@ class InventorySystem:
 
         interactable = self.interactable_system.hit_test(event.pos)
         if interactable is None:
+            # Drop loot on ground from cursor
+            if self.player.cursor_loot.get_loot_count() > 0:
+                cursor_loot = next(iter(self.player.cursor_loot.loot_dict.values()))
+                offset_x, offset_y = self.input_system.get_offset(self.player)
+                world_x = int(event.pos[0] - offset_x)
+                world_y = int(event.pos[1] - offset_y)
+                self.server.sendall(f'drop_ground:{cursor_loot.server_id}:{cursor_loot.loot_id}:{world_x}:{world_y}\n'.encode())
+
             return
 
         # Grab loot from inventory

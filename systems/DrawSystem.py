@@ -455,7 +455,7 @@ class DrawSystem:
             # If the box would go off the bottom or right edge of the screen, shift it up or left so it stays on screen
             draw_x = mouse_x
             draw_y = mouse_y - box_height
-            screen_width, screen_height = self.screen.get_size()
+            screen_width, _ = self.screen.get_size()
             if draw_x + box_width > screen_width:
                 draw_x = screen_width - box_width
             if draw_y < 0:
